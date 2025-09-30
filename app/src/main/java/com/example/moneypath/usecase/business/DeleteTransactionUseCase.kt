@@ -1,13 +1,17 @@
-package com.example.moneypath.usecase
+package com.example.moneypath.usecase.business
 
 import android.util.Log
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.TransactionType
 import com.example.moneypath.data.repository.FirebaseRepository
+import com.example.moneypath.usecase.crypto.GetWalletBalanceUseCase
+import com.example.moneypath.usecase.crypto.UpdateBalanceUseCase
 import javax.inject.Inject
 
 class DeleteTransactionUseCase@Inject constructor(
-    private val repository: FirebaseRepository
+    private val repository: FirebaseRepository,
+    private val updateBalanceUseCase: UpdateBalanceUseCase,
+    private val getWalletBalanceUseCase: GetWalletBalanceUseCase
 ) {
 
     sealed class Result {
@@ -18,35 +22,35 @@ class DeleteTransactionUseCase@Inject constructor(
     suspend fun execute(transaction: Transaction): Result {
         return try {
             // Отримуємо баланс
-            val balance = repository.getWalletBalance(transaction.walletId)
+            val balance = getWalletBalanceUseCase(transaction.walletId)
                 ?: return Result.Failure("Гаманець не знайдено")
 
 
             // Логіка для типів транзакцій
             when (transaction.type) {
                 TransactionType.Income -> {
-                    repository.updateWalletBalance(transaction.walletId, balance - transaction.amount)
+                    updateBalanceUseCase(transaction.walletId, balance - transaction.amount)
                 }
                 TransactionType.Expense -> {
-                    repository.updateWalletBalance(transaction.walletId, balance - transaction.amount)
+                    updateBalanceUseCase(transaction.walletId, balance - transaction.amount)
                 }
                 TransactionType.Transfer -> {
                     // Переказ зовнішній
                     when (transaction.description) {
                         "Зовнішній(дохід)" -> {
-                            repository.updateWalletBalance(transaction.walletId, balance - transaction.amount)
+                            updateBalanceUseCase(transaction.walletId, balance - transaction.amount)
                         }
                         "Зовнішній(витрата)" -> {
-                            repository.updateWalletBalance(transaction.walletId, balance + transaction.amount)
+                            updateBalanceUseCase(transaction.walletId, balance + transaction.amount)
                         }
                         else -> { // Внутрішній
-                            val balanceTo = repository.getWalletBalance(transaction.walletIdTo)
+                            val balanceTo = getWalletBalanceUseCase(transaction.walletIdTo)
                                 ?: return Result.Failure("Гаманець не знайдено")
-                                repository.updateWalletBalance(
+                                updateBalanceUseCase(
                                     transaction.walletId,
                                     balance + transaction.amount
                                 )
-                                repository.updateWalletBalance(
+                                updateBalanceUseCase(
                                     transaction.walletIdTo,
                                     balanceTo - transaction.amount
                                 )

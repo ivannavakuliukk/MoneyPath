@@ -16,10 +16,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.moneypath.data.repository.MonobankRepository
 import com.example.moneypath.ui.elements.AppNavHost
 import com.example.moneypath.ui.theme.MoneyPathTheme
-import com.example.moneypath.usecase.MonobankSyncManager
+import com.example.moneypath.usecase.business.MonobankSyncManager
 import com.example.moneypath.utils.ScreenSize
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

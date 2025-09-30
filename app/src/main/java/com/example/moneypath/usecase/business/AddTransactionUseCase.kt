@@ -1,15 +1,20 @@
-package com.example.moneypath.usecase
+package com.example.moneypath.usecase.business
 
 import android.util.Log
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.TransactionType
+import com.example.moneypath.data.repository.CryptoRepository
 import com.example.moneypath.data.repository.FirebaseRepository
-import kotlinx.coroutines.coroutineScope
+import com.example.moneypath.usecase.crypto.GetWalletBalanceUseCase
+import com.example.moneypath.usecase.crypto.UpdateBalanceUseCase
 import javax.inject.Inject
 
 // Бізнес-логіка оновлення балансу при додаванні транзакції
 class AddTransactionUseCase@Inject constructor(
-    private val repository: FirebaseRepository
+    private val getWalletBalanceUseCase: GetWalletBalanceUseCase,
+    private val updateBalanceUseCase: UpdateBalanceUseCase,
+    private val firebaseRepository: FirebaseRepository,
+    private val cryptoRepository: CryptoRepository
 ) {
 
     sealed class Result {
@@ -20,19 +25,19 @@ class AddTransactionUseCase@Inject constructor(
     suspend fun execute(transaction: Transaction): Result {
         return try {
             // Отримуємо баланс
-            val balance = repository.getWalletBalance(transaction.walletId)
+            val balance = getWalletBalanceUseCase(transaction.walletId)
                 ?: return Result.Failure("Гаманець не знайдено")
 
 
             // Логіка для типів транзакцій
             when (transaction.type) {
                 TransactionType.Income -> {
-                    repository.updateWalletBalance(transaction.walletId, balance + transaction.amount)
+                    updateBalanceUseCase(transaction.walletId, balance + transaction.amount)
                 }
                 TransactionType.Expense -> {
                     if (balance < -transaction.amount)
                         return Result.Failure("Недостатньо коштів")
-                    repository.updateWalletBalance(transaction.walletId, balance + transaction.amount)
+                    updateBalanceUseCase(transaction.walletId, balance + transaction.amount)
                 }
                 TransactionType.Transfer -> {
                     if(transaction.description == "Зовнішній(витрата)" || transaction.description == "Внутрішній") {
@@ -43,22 +48,22 @@ class AddTransactionUseCase@Inject constructor(
                     // Переказ зовнішній
                     when (transaction.description) {
                         "Зовнішній(дохід)" -> {
-                            repository.updateWalletBalance(transaction.walletId, balance + transaction.amount)
+                            updateBalanceUseCase(transaction.walletId, balance + transaction.amount)
                         }
                         "Зовнішній(витрата)" -> {
-                            repository.updateWalletBalance(transaction.walletId, balance - transaction.amount)
+                            updateBalanceUseCase(transaction.walletId, balance - transaction.amount)
                         }
                         else -> { // Внутрішній
-                            val balanceTo = repository.getWalletBalance(transaction.walletIdTo)
+                            val balanceTo = getWalletBalanceUseCase(transaction.walletIdTo)
                                 ?: return Result.Failure("Гаманець не знайдено")
                             if (transaction.walletIdTo == transaction.walletId) {
                                 return Result.Failure("Ви обрали один і той самий гаманець")
                             }else {
-                                    repository.updateWalletBalance(
+                                   updateBalanceUseCase(
                                         transaction.walletId,
                                         balance - transaction.amount
                                     )
-                                    repository.updateWalletBalance(
+                                    updateBalanceUseCase(
                                         transaction.walletIdTo,
                                         balanceTo + transaction.amount
                                     )
@@ -68,8 +73,13 @@ class AddTransactionUseCase@Inject constructor(
                 }
             }
 
-            // Додаємо саму транзакцію
-            repository.addTransaction(transaction)
+            // Додаємо саму транзакцію (зашифровану)
+            val encryptedBalance = cryptoRepository.encryptData(transaction.amount.toString())
+            firebaseRepository.addTransaction(transaction.copy(
+                amount = 0.0,
+                amountEnc = encryptedBalance.first,
+                amountIv = encryptedBalance.second
+            ))
             Result.Success
 
         } catch (e: Exception) {

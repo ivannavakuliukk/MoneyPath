@@ -6,6 +6,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import coil.network.HttpException
 import com.example.moneypath.data.datasource.MonobankService
+import com.example.moneypath.data.local.EncryptedPrefsHelper
 import com.example.moneypath.data.models.ClientInfo
 import com.example.moneypath.data.models.MonoTransaction
 import com.example.moneypath.data.models.Transaction
@@ -24,28 +25,18 @@ import javax.inject.Inject
  * @property context використовується для створення зашифрованого сховища токена.
  * @property service екземпляр MonobankService для взаємодії з Monobank API.
  */
-class MonobankRepository @Inject constructor(@ApplicationContext private val context: Context, private val service: MonobankService){
-
-    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-
-    private val sharedPreferences = EncryptedSharedPreferences.create(
-        "monobank_prefs", // ім’я файлу
-        masterKeyAlias,
-        context,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+class MonobankRepository @Inject constructor(private val service: MonobankService, private val encryptedPrefsHelper: EncryptedPrefsHelper){
 
     fun saveToken(token: String) {
-        sharedPreferences.edit().putString("monobank_token", token).apply()
-    }
-
-    fun getToken(): String? {
-        return sharedPreferences.getString("monobank_token", null)
+        encryptedPrefsHelper.saveToken(token)
     }
 
     fun hasToken(): Boolean {
         return !getToken().isNullOrEmpty()
+    }
+
+    private fun getToken(): String?{
+        return encryptedPrefsHelper.getToken()
     }
 
     suspend fun isTokenValid(): Boolean{
@@ -59,7 +50,7 @@ class MonobankRepository @Inject constructor(@ApplicationContext private val con
     }
 
     fun clearToken() {
-        sharedPreferences.edit().remove("monobank_token").apply()
+        encryptedPrefsHelper.removeToken()
     }
 
     suspend fun getTransactionBetween(fromDate: Long, toDate: Long):List<MonoTransaction>{

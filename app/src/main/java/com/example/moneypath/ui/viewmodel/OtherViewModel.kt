@@ -11,7 +11,8 @@ import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.data.repository.FirebaseRepository
 import com.example.moneypath.data.repository.MonobankRepository
-import com.example.moneypath.usecase.MonobankSyncManager
+import com.example.moneypath.usecase.business.MonobankSyncManager
+import com.example.moneypath.usecase.crypto.AddOrUpdateWalletUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,7 +21,8 @@ import javax.inject.Inject
 class OtherViewModel @Inject constructor(
     private val repository: MonobankRepository,
     private val firebaseRepository: FirebaseRepository,
-    private val syncManager: MonobankSyncManager
+    private val syncManager: MonobankSyncManager,
+    private val addOrUpdateWalletUseCase: AddOrUpdateWalletUseCase
 ):ViewModel() {
 
     data class UiState(
@@ -72,7 +74,7 @@ class OtherViewModel @Inject constructor(
                     clearToken()
                     uiState = uiState.copy(token = "", hasToken = false)
                 } else {
-                    firebaseRepository.addOrUpdateWallet(
+                    addOrUpdateWalletUseCase(
                         Wallet(
                             id = "mono",
                             type = WalletType.Card,

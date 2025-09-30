@@ -31,6 +31,7 @@ playServicesAuth = "20.6.0"
 retrofit = "2.9.0"
 firebaseDatabase = "22.0.0"
 securityCrypto = "1.1.0"
+firebaseCrashlyticsBuildtools = "3.0.6"
 
 
 [libraries]
@@ -72,6 +73,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
+firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

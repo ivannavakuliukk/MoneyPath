@@ -17,6 +17,7 @@ import com.example.moneypath.ui.screens.MainScreen
 import com.example.moneypath.ui.screens.OtherScreen
 import com.example.moneypath.ui.screens.PlanScreen
 import com.example.moneypath.ui.screens.ReportsScreen
+import com.example.moneypath.ui.screens.SecuritySetupScreen
 import com.example.moneypath.ui.screens.TransactionInfoScreen
 import com.example.moneypath.utils.slideInLeft
 import com.example.moneypath.utils.slideOutRight
@@ -28,7 +29,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
 
     NavHost(
         navController = navController,
-        startDestination = BottomNavItem.Home.route,
+        startDestination = "security",
         modifier = modifier,
     ){
         // Screens нижньої панелі з bottom bar
@@ -71,5 +72,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             val transactionId = backStackEntry.arguments?.getString("transactionId")?:""
             TransactionInfoScreen(navController, transactionId)
         }
+        composable(
+            route = "security"
+        ){SecuritySetupScreen(navController)}
     }
 }

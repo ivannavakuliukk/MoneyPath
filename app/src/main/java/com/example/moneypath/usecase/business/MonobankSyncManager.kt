@@ -1,11 +1,12 @@
-package com.example.moneypath.usecase
+package com.example.moneypath.usecase.business
 
 import android.content.Context
 import android.util.Log
 import com.example.moneypath.data.models.MonoTransaction
 import com.example.moneypath.data.models.toTransaction
-import com.example.moneypath.data.repository.FirebaseRepository
 import com.example.moneypath.data.repository.MonobankRepository
+import com.example.moneypath.usecase.crypto.AddTransactionsUseCase
+import com.example.moneypath.usecase.crypto.UpdateBalanceUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,13 +27,15 @@ import javax.inject.Inject
  *
  * @property context для доступу до локальних налаштувань (SharedPreferences)
  * @property monobankRepository екземпляр MonobankRepository
- * @property firebaseRepository екземпляр FirebaseRepository
+ * @property addTransactionsUseCase use case для роботи з Firebase
+ * @property updateBalanceUseCase use case для роботи з Firebase
  */
 
 class MonobankSyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val monobankRepository: MonobankRepository,
-    private val firebaseRepository: FirebaseRepository
+    private val addTransactionsUseCase: AddTransactionsUseCase,
+    private val updateBalanceUseCase: UpdateBalanceUseCase
 ){
     private var pollingJob: Job? = null
     private val prefs = context.getSharedPreferences("monobank_sync", Context.MODE_PRIVATE)
@@ -48,7 +51,7 @@ class MonobankSyncManager @Inject constructor(
     }
 
 
-    suspend fun syncSinceLastVisit(): Result{
+    suspend fun syncSinceLastVisit(): Result {
         val from = getLastSync()
         val to = System.currentTimeMillis()/1000
 
@@ -59,7 +62,7 @@ class MonobankSyncManager @Inject constructor(
 
             if (monoTransactions.isNotEmpty()) {
                 val addSuccess =
-                    firebaseRepository.addTransactions(monoTransactions.map { it.toTransaction() })
+                    addTransactionsUseCase(monoTransactions.map { it.toTransaction() })
                 val updateSuccess = updateMonoWallet(monoTransactions)
                 if (addSuccess && updateSuccess) {
                     return Result.Success
@@ -78,7 +81,7 @@ class MonobankSyncManager @Inject constructor(
     }
 
     private suspend fun updateMonoWallet(transactions:List<MonoTransaction>): Boolean{
-        return firebaseRepository.updateWalletBalance("mono", transactions.last().balance.toDouble()/100)
+        return updateBalanceUseCase("mono", transactions.last().balance.toDouble()/100)
     }
 
     fun startPolling() {

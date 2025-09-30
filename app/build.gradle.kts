@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.leanback)
     implementation(libs.glide)
     implementation(libs.firebase.database)
+    implementation(libs.firebase.crashlytics.buildtools)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,6 +1,9 @@
 package com.example.moneypath.data.repository
 
+import android.provider.ContactsContract.Data
+import android.util.Base64
 import android.util.Log
+import androidx.compose.animation.core.snap
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.utils.getDayRangeFromUnix
@@ -43,23 +46,23 @@ class FirebaseRepository @Inject constructor(
     }
 
     // Вихід з акаунту
-    suspend fun logOut(): Boolean{
-        return try{
+    suspend fun logOut(): Boolean {
+        return try {
             auth.signOut()
             true
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error Sign out user")
             false
         }
     }
 
     // Видалити акаунт
-    suspend fun deleteAccount(): Boolean{
-        return try{
+    suspend fun deleteAccount(): Boolean {
+        return try {
             val user = getCurrentUser() ?: return false
             user.delete().await()
             true
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error deleting user account")
             false
         }
@@ -68,20 +71,23 @@ class FirebaseRepository @Inject constructor(
     // --- Гаманці ---
 
     // Отримати посилання на вузол гаманців - users/{uid}/wallets
-    private fun getUserWalletsRef():DatabaseReference?{
-        return getCurrentUser()?.uid?.let{database.getReference("users").child(it).child("wallets")}
+    private fun getUserWalletsRef(): DatabaseReference? {
+        return getCurrentUser()?.uid?.let {
+            database.getReference("users").child(it).child("wallets")
+        }
     }
 
     // Listener(Слухач) - підписка на зміни у списку гаманців
     fun getWallets(
         onUpdate: (List<Wallet>) -> Unit,
         onError: (String) -> Unit
-    ){
-        walletsListener = object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot){
-                val wallets = snapshot.children.mapNotNull{it.getValue(Wallet::class.java)}
+    ) {
+        walletsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val wallets = snapshot.children.mapNotNull { it.getValue(Wallet::class.java) }
                 onUpdate(wallets)
             }
+
             override fun onCancelled(error: DatabaseError) {
                 Log.d("getWallets", "Problem in wallets reading, ${error.message}")
                 onError("Проблема при завантаженні гаманців")
@@ -89,69 +95,75 @@ class FirebaseRepository @Inject constructor(
         }
         getUserWalletsRef()?.addValueEventListener(walletsListener!!)
     }
+
     // Видалити Listener
-    fun removeWalletsEventListener(){
-        walletsListener?.let{
+    fun removeWalletsEventListener() {
+        walletsListener?.let {
             getUserWalletsRef()?.removeEventListener(it)
         }
         walletsListener = null
     }
 
     // Додати або змінити гаманець
-    suspend fun addOrUpdateWallet(wallet:Wallet): Boolean{
+    suspend fun addOrUpdateWallet(wallet: Wallet): Boolean {
         val walletId = wallet.id.ifEmpty { UUID.randomUUID().toString() }
-        return try{
+        return try {
             getUserWalletsRef()?.child(walletId)?.setValue(wallet.copy(id = walletId))?.await()
             true
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error adding wallet", e)
             false
         }
     }
 
     // Отримати гаманець за id
-    suspend fun getWalletById(walletId: String):Wallet?{
-        return try{
+    suspend fun getWalletById(walletId: String): Wallet? {
+        return try {
             val snapshot = getUserWalletsRef()?.child(walletId)?.get()?.await()
             snapshot?.getValue(Wallet::class.java)
-        }catch(e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Can`t get wallet by id", e)
             null
         }
     }
 
     // Отримати баланс гаманця
-    suspend fun getWalletBalance(walletId: String):Double?{
-        return try{
-            val snapshot = getUserWalletsRef()?.child(walletId)?.child("balance")?.get()?.await()
-            snapshot?.getValue(Double::class.java)
-        }catch (e:Exception){
+    suspend fun getWalletBalance(walletId: String): Pair<String, String>? {
+        return try {
+            val snapshot = getUserWalletsRef()?.child(walletId)?.get()?.await()
+            val balanceEnc = snapshot?.child("balanceEnc")?.getValue(String::class.java)
+            val balanceIv = snapshot?.child("balanceIv")?.getValue(String::class.java)
+            if(balanceIv!= null && balanceEnc!=null){
+                balanceEnc to balanceIv
+            }else null
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error getting wallet`s ballance", e)
             null
         }
     }
 
     // Оновити поле (баланс) гаманця
-    suspend fun updateWalletBalance(walletId: String, newBalance:Double):Boolean{
-        return try{
+    suspend fun updateWalletBalance(walletId: String, newBalanceEnc: String, newBalanceIv: String): Boolean {
+        return try {
             val updates = mapOf<String, Any>(
-                "balance" to newBalance
+                "balanceEnc" to newBalanceEnc,
+                "balanceIv" to newBalanceIv
             )
             getUserWalletsRef()?.child(walletId)?.updateChildren(updates)?.await()
             true
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error updating wallet balance", e)
             false
         }
     }
 
     // Видалити гаманець
-    suspend fun deleteWallet(walletId: String): Boolean{
-        return try{
+    suspend fun deleteWallet(walletId: String): Boolean {
+        return try {
             deleteTransactionsByWallet(walletId)
             getUserWalletsRef()?.child(walletId)?.removeValue()?.await()
             true
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error deleting wallet", e)
             false
         }
@@ -161,17 +173,20 @@ class FirebaseRepository @Inject constructor(
     // ---Транзакції---
 
     // Отримати посилання на вузол транзакцій - users/{uid}/transactions
-    private fun getUserTransactionsRef():DatabaseReference?{
-        return getCurrentUser()?.uid?.let{database.getReference("users").child(it).child("transactions")}
+    private fun getUserTransactionsRef(): DatabaseReference? {
+        return getCurrentUser()?.uid?.let {
+            database.getReference("users").child(it).child("transactions")
+        }
     }
 
     // Додати транзакцію
-    suspend fun addTransaction(transaction: Transaction):Boolean{
+    suspend fun addTransaction(transaction: Transaction): Boolean {
         val transactionId = transaction.id.ifEmpty { UUID.randomUUID().toString() }
-        return try{
-            getUserTransactionsRef()?.child(transactionId)?.setValue(transaction.copy(id = transactionId))?.await()
+        return try {
+            getUserTransactionsRef()?.child(transactionId)
+                ?.setValue(transaction.copy(id = transactionId))?.await()
             true
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error adding transaction", e)
             false
         }
@@ -193,22 +208,22 @@ class FirebaseRepository @Inject constructor(
 
 
     // Видалити транзакцію
-    suspend fun deleteTransaction(transactionId: String): Boolean{
-        return try{
+    suspend fun deleteTransaction(transactionId: String): Boolean {
+        return try {
             getUserTransactionsRef()?.child(transactionId)?.removeValue()?.await()
             true
-        }catch(e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error deleting transaction", e)
             false
         }
     }
 
     // Отримати транзакцію за id
-    suspend fun getTransactionById(transactionId: String):Transaction?{
-        return try{
+    suspend fun getTransactionById(transactionId: String): Transaction? {
+        return try {
             val snapshot = getUserTransactionsRef()?.child(transactionId)?.get()?.await()
             snapshot?.getValue(Transaction::class.java)
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Can`t get transaction by id.", e)
             null
         }
@@ -222,10 +237,10 @@ class FirebaseRepository @Inject constructor(
         date: Long,
         onUpdate: (List<Transaction>) -> Unit,
         onError: (String) -> Unit
-    ){
-        val(dateStart, dateEnd) = getDayRangeFromUnix(date)
+    ) {
+        val (dateStart, dateEnd) = getDayRangeFromUnix(date)
         // Відписка від попереднього слухача
-        transactionsCurrentListener?.let { listener->
+        transactionsCurrentListener?.let { listener ->
             transactionsQuery?.removeEventListener(listener)
         }
 
@@ -236,11 +251,13 @@ class FirebaseRepository @Inject constructor(
             ?.endAt(dateEnd.toDouble())
 
 
-        val listener = object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot){
-                val transactions = snapshot.children.mapNotNull{it.getValue(Transaction::class.java)}
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val transactions =
+                    snapshot.children.mapNotNull { it.getValue(Transaction::class.java) }
                 onUpdate(transactions)
             }
+
             override fun onCancelled(error: DatabaseError) {
                 Log.d("Firebase Repository", "Problem in transactions reading, ${error.message}")
                 onError("Проблема при завантаженні гаманців")
@@ -250,24 +267,116 @@ class FirebaseRepository @Inject constructor(
         transactionsCurrentListener = listener
     }
 
-    fun removeTransactionsEventListener(){
-        transactionsCurrentListener?.let{
+    fun removeTransactionsEventListener() {
+        transactionsCurrentListener?.let {
             getUserWalletsRef()?.removeEventListener(it)
         }
         transactionsCurrentListener = null
     }
 
     // Видалити транзакції певного гаманця
-    private suspend fun deleteTransactionsByWallet(walletId: String):Boolean{
-        return try{
+    private suspend fun deleteTransactionsByWallet(walletId: String): Boolean {
+        return try {
             val query = getUserTransactionsRef()?.orderByChild("walletId")?.equalTo(walletId)
-            query?.get()?.await()?.children?.forEach{snapshot->
+            query?.get()?.await()?.children?.forEach { snapshot ->
                 snapshot.ref.removeValue().await()
             }
             true
-        }catch(e:Exception){
+        } catch (e: Exception) {
             Log.d("Firebase Repository", "Error deleting transactions", e)
             false
         }
     }
+
+    // --Дані для шифрування--
+
+    // Отримати посилання вузол для шифрування
+    // Отримати посилання на вузол транзакцій - users/{uid}/transactions
+    private fun getUserSecurityRef(): DatabaseReference? {
+        return getCurrentUser()?.uid?.let {
+            database.getReference("users").child(it).child("security")
+        }
+    }
+
+
+    // Додати salt
+    suspend fun addSalt(saltBase64: String): Boolean {
+        return try {
+            getUserSecurityRef()?.child("salt")?.setValue(saltBase64)?.await()
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseRepository", "Error adding salt", e)
+            false
+        }
+    }
+
+    // Отримати salt
+    suspend fun getSalt(): String? {
+        return try {
+            val snapshot = getUserSecurityRef()?.child("salt")?.get()?.await()
+            snapshot?.getValue(String::class.java)
+        } catch (e: Exception) {
+            Log.d("FirebaseRepository", "Error getting salt", e)
+            null
+        }
+    }
+
+    // Додати обгорнутий дек
+    suspend fun addWrappedDEK(wrappedDEKBase64: String, ivBase64: String): Boolean {
+        return try {
+            val updates = mapOf(
+                "wrappedDEK" to wrappedDEKBase64,
+                "wrappedDEK_iv" to ivBase64
+            )
+            getUserSecurityRef()?.updateChildren(updates)?.await()
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseRepository", "Error saving wrappedDEK", e)
+            false
+        }
+    }
+
+    // Отримати обгорнутий дек
+    suspend fun getWrappedDEK(): Pair<String, String>? {
+        return try {
+            val snapshot = getUserSecurityRef()?.get()?.await()
+            val wrapped = snapshot?.child("wrappedDEK")?.getValue(String::class.java)
+            val iv = snapshot?.child("wrappedDEK_iv")?.getValue(String::class.java)
+            if (wrapped != null && iv != null) wrapped to iv else null
+        } catch (e: Exception) {
+            Log.d("FirebaseRepository", "Error getting wrappedDEK", e)
+            null
+        }
+    }
+
+
+    // --- Зберегти тестовий рядок (canary) ---
+    suspend fun addCanaryData(encrypted: String, iv: String): Boolean {
+        return try {
+            val updates = mapOf(
+                "canary" to encrypted,
+                "canary_iv" to iv
+            )
+            getUserSecurityRef()?.updateChildren(updates)?.await()
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseRepository", "Error saving canary", e)
+            false
+        }
+    }
+
+    // --- Отримати тестовий рядок (canary) ---
+    suspend fun getCanaryData(): Pair<String, String>? {
+        return try {
+            val snapshot = getUserSecurityRef()?.get()?.await()
+            val encrypted = snapshot?.child("canary")?.getValue(String::class.java)
+            val iv = snapshot?.child("canary_iv")?.getValue(String::class.java)
+
+            if (encrypted != null && iv != null) encrypted to iv else null
+        } catch (e: Exception) {
+            Log.d("FirebaseRepository", "Error getting canary", e)
+            null
+        }
+    }
+
 }

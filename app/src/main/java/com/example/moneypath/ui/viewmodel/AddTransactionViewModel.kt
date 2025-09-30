@@ -1,6 +1,5 @@
 package com.example.moneypath.ui.viewmodel
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,7 +11,7 @@ import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.TransactionType
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.AddTransactionUseCase
+import com.example.moneypath.usecase.business.AddTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

@@ -5,19 +5,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.repository.FirebaseRepository
+import com.example.moneypath.usecase.crypto.ObserveTransactionsUseCase
+import com.example.moneypath.usecase.crypto.ObserveWalletsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
-import java.lang.Error
 import javax.inject.Inject
 
 // ViewModel сторінки MainScreen
 @HiltViewModel
-open class MainScreenViewModel @Inject constructor (private val repository: FirebaseRepository): ViewModel(){
+open class MainScreenViewModel @Inject constructor (
+    private val repository: FirebaseRepository,
+    private val observeWalletsUseCase: ObserveWalletsUseCase,
+    private val observeTransactionsUseCase: ObserveTransactionsUseCase
+): ViewModel(){
 
     data class UiState(
         val userName: String = "Гість",
@@ -67,7 +69,7 @@ open class MainScreenViewModel @Inject constructor (private val repository: Fire
             isWalletsLoading = true,
             isWalletsSuccess = false
         )
-        repository.getWallets(
+        observeWalletsUseCase(
             onUpdate = { newWallets ->
                 uiState = uiState.copy(
                     wallets = newWallets,
@@ -84,12 +86,12 @@ open class MainScreenViewModel @Inject constructor (private val repository: Fire
         )
     }
 
-    fun loadTransactionsByDate(date:Long){
+    private fun loadTransactionsByDate(date:Long){
         uiState = uiState.copy(
             isTransactionLoading = true,
             isTransactionSuccess = false
         )
-        repository.getTransactionsByDate(
+        observeTransactionsUseCase(
             date = date,
             onUpdate = {newTransactions->
                uiState= uiState.copy(

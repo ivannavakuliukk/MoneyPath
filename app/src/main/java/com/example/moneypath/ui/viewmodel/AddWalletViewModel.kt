@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
-import com.example.moneypath.data.repository.FirebaseRepository
+import com.example.moneypath.usecase.crypto.AddOrUpdateWalletUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,7 +16,9 @@ import javax.inject.Inject
 
 // ViewModel сторінки AddWalletScreen
 @HiltViewModel
-open class AddWalletViewModel @Inject constructor(private val repository: FirebaseRepository): ViewModel() {
+open class AddWalletViewModel @Inject constructor(
+    private val addOrUpdateWalletUseCase: AddOrUpdateWalletUseCase
+): ViewModel() {
 
     data class UiState(
         val name: String = "",
@@ -52,7 +54,7 @@ open class AddWalletViewModel @Inject constructor(private val repository: Fireba
                 uiState = uiState.copy(error = "Введіть коректне ім'я: хоча б 3 знаки")
                 return@launch
             }
-            val result = repository.addOrUpdateWallet(
+            val result = addOrUpdateWalletUseCase(
                 Wallet(walletId,
                 uiState.name,
                 uiState.type, uiState.balance, WalletSource.Manual))

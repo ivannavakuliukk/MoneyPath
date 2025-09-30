@@ -8,7 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.DeleteTransactionUseCase
+import com.example.moneypath.usecase.business.DeleteTransactionUseCase
+import com.example.moneypath.usecase.crypto.GetTransactionByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,7 +17,9 @@ import javax.inject.Inject
 @HiltViewModel
 class TransactionInfoViewModel @Inject constructor(
     private val repository: FirebaseRepository,
-    private val deleteTransactionUseCase: DeleteTransactionUseCase): ViewModel(){
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val getTransactionByIdUseCase: GetTransactionByIdUseCase
+): ViewModel(){
 
     data class UiState(
         val transaction: Transaction = Transaction(),
@@ -44,7 +47,7 @@ class TransactionInfoViewModel @Inject constructor(
                 uiState = uiState.copy(
                     isLoadingTransaction = true
                 )
-                val transaction = repository.getTransactionById(transactionId)?:
+                val transaction = getTransactionByIdUseCase(transactionId)?:
                 throw IllegalStateException("Помилка при завантаженні транзакції")
                 uiState = uiState.copy(transaction = transaction)
 
