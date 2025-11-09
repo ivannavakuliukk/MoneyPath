@@ -27,7 +27,9 @@ private val LightColorScheme = lightColorScheme(
     inverseSurface = Color(0xFF9EA7AD),
     inverseOnSurface = Color(0xFF6E7C87),
     surfaceVariant = Color(0xFFE46458),
-    onTertiary = Color(0xFF05AEA0)
+    onTertiary = Color(0xFF05AEA0),
+    surfaceDim = Color(0xFFDFBB1B),
+    inversePrimary = Color(0xFFFFD93B)
 )
 
 object Inter {

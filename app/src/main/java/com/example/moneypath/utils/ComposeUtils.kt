@@ -29,6 +29,19 @@ fun TransactionType.toDisplayName():String{
     }
 }
 
+fun monthWordForm(number: Int): String {
+    val n = number % 100
+    return if (n in 11..19) {
+        "місяців"
+    } else {
+        when (n % 10) {
+            1 -> "місяць"
+            2, 3, 4 -> "місяці"
+            else -> "місяців"
+        }
+    }
+}
+
 @Composable
 fun TransactionType.backgroundColor(): androidx.compose.ui.graphics.Color {
     return when(this){
@@ -58,6 +71,18 @@ val AppTextFieldColors
         disabledTextColor = MaterialTheme.colorScheme.onPrimary,
         disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
         disabledIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+    )
+
+val GreenTextFieldColors
+    @Composable get() = TextFieldDefaults.colors(
+        focusedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+        unfocusedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+        focusedContainerColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.1f),
+        unfocusedContainerColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.1f),
+        cursorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+        unfocusedIndicatorColor = MaterialTheme.colorScheme.onTertiary,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onTertiary,
+        focusedLabelColor = MaterialTheme.colorScheme.onTertiary
     )
 
 val AppTextFieldColors2

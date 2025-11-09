@@ -13,6 +13,7 @@ import com.example.moneypath.ui.screens.AddTransactionScreen
 import com.example.moneypath.ui.screens.AddWalletScreen
 import com.example.moneypath.ui.screens.CategoriesScreen
 import com.example.moneypath.ui.screens.EditWalletScreen
+import com.example.moneypath.ui.screens.FormScreen
 import com.example.moneypath.ui.screens.MainScreen
 import com.example.moneypath.ui.screens.OtherScreen
 import com.example.moneypath.ui.screens.PlanScreen
@@ -75,5 +76,10 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable(
             route = "security"
         ){SecuritySetupScreen(navController)}
+        composable(
+            route = "form",
+            enterTransition = slideInLeft,
+            exitTransition = slideOutRight,
+        ) { FormScreen(navController) }
     }
 }

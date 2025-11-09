@@ -4,6 +4,8 @@ import android.provider.ContactsContract.Data
 import android.util.Base64
 import android.util.Log
 import androidx.compose.animation.core.snap
+import com.example.moneypath.data.models.BudgetPlanDB
+import com.example.moneypath.data.models.BudgetPlanRequest
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.utils.getDayRangeFromUnix
@@ -378,5 +380,56 @@ class FirebaseRepository @Inject constructor(
             null
         }
     }
+
+    // Отримати посилання на вузол планування - users/{uid}/planning
+    private fun getUserPlanningRef(): DatabaseReference? {
+        return getCurrentUser()?.uid?.let {
+            database.getReference("users").child(it).child("planning")
+        }
+    }
+
+    // Видалити вузол планування
+    fun deleteUserPlanning() {
+        getUserPlanningRef()?.removeValue()?.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("Firebase", "Planning node deleted successfully")
+            } else {
+                Log.e("Firebase", "Failed to delete planning node", task.exception)
+            }
+        }
+    }
+
+    suspend fun updateSetup(data: BudgetPlanRequest): Boolean{
+        return try {
+            getUserPlanningRef()?.child("set_up")?.setValue(data)?.await()
+            true
+        } catch (e: Exception) {
+            Log.d("Firebase Repository", "Error adding setup", e)
+            false
+        }
+    }
+
+    suspend fun updateTotalPlan(data: BudgetPlanDB): Boolean{
+        return try {
+            getUserPlanningRef()?.child("total_plan")?.setValue(data)?.await()
+            true
+        } catch (e: Exception) {
+            Log.d("Firebase Repository", "Error adding total plan", e)
+            false
+        }
+    }
+
+    suspend fun addAdditionalPlan(data: BudgetPlanDB, num: Int):Boolean{
+        return try {
+            getUserPlanningRef()?.child("additional_plans")?.child(num.toString())?.setValue(data)?.await()
+            true
+        } catch (e: Exception) {
+            Log.d("Firebase Repository", "Error adding additional plan", e)
+            false
+        }
+    }
+
+
+
 
 }

@@ -28,10 +28,12 @@ googleid = "1.1.1"
 leanback = "1.0.0"
 glide = "4.11.0"
 playServicesAuth = "20.6.0"
+reorderable = "0.9.6"
 retrofit = "2.9.0"
 firebaseDatabase = "22.0.0"
 securityCrypto = "1.1.0"
 firebaseCrashlyticsBuildtools = "3.0.6"
+uiTestAndroid = "1.7.2"
 
 
 [libraries]
@@ -71,9 +73,11 @@ androidx-leanback = { group = "androidx.leanback", name = "leanback", version.re
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+reorderable = { module = "org.burnoutcrew.composereorderable:reorderable", version.ref = "reorderable" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+androidx-ui-test-android = { group = "androidx.compose.ui", name = "ui-test-android", version.ref = "uiTestAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

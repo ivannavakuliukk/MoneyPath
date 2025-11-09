@@ -19,6 +19,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -53,6 +56,7 @@ android {
     }
 }
 
+
 dependencies {
     configurations.all {
         exclude(group = "androidx.wear.compose")
@@ -76,6 +80,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.firebase.database)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.ui.test.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -104,5 +109,7 @@ dependencies {
 
     implementation (libs.coil.compose)
     implementation (libs.androidx.security.crypto)
+
+    implementation (libs.reorderable)
 
 }

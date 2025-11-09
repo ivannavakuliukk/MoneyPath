@@ -34,24 +34,26 @@ class CryptoRepository @Inject constructor(){
         return salt
     }
 
-    fun generateDEK(): SecretKey {
-        val keyGen = KeyGenerator.getInstance("AES")
-        keyGen.init(256)
-        return keyGen.generateKey()
-    }
+//    fun generateDEK(): SecretKey {
+//        val keyGen = KeyGenerator.getInstance("AES")
+//        keyGen.init(256)
+//        return keyGen.generateKey()
+//    }
 
     fun deriveMasterKey(password: String, salt: ByteArray): SecretKey {
+        // Вибір алгоритму залежно від версії Android
         val algorithm = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             "PBKDF2WithHmacSHA256"
         } else {
             "PBKDF2WithHmacSHA1"
         }
+        // Специфікація ключа: пароль, сіль, кількість ітерацій, довжина ключа
         val spec = PBEKeySpec(password.toCharArray(), salt, 10_000, 256)
         val factory = SecretKeyFactory.getInstance(algorithm)
         return SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
     }
 
-    // --- Обгортання DEK ---
+    // --- Обгортання та розгортання DEK ---
     fun wrapDEK(dek: SecretKey, masterKey: SecretKey): Pair<String, String> {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val iv = ByteArray(12)
@@ -70,6 +72,12 @@ class CryptoRepository @Inject constructor(){
     }
 
     // --- Шифрування/дешифрування даних з sessionDEK ---
+    fun generateDEK(): SecretKey {
+        val keyGen = KeyGenerator.getInstance("AES")
+        keyGen.init(256)
+        return keyGen.generateKey()
+    }
+
     fun encryptData(data: String): Pair<String, String> {
         val dek = sessionDEK ?: throw IllegalStateException("DEK not initialized")
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
