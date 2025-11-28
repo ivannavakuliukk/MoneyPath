@@ -1,6 +1,8 @@
 package com.example.moneypath.ui.elements
 
 import android.app.DatePickerDialog
+import android.graphics.drawable.Animatable
+import android.widget.ImageView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -39,6 +42,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -65,7 +69,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.size.Size
 import com.example.moneypath.R
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.utils.AppTextFieldColors
@@ -80,8 +90,8 @@ import java.util.Calendar
 
 // Лінія
 @Composable
-fun Line(color: Color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f)){
-    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(color))
+fun Line(color: Color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f), modifier: Modifier = Modifier){
+    Box(modifier = modifier.fillMaxWidth().height(1.dp).background(color))
 }
 
 /*
@@ -632,5 +642,151 @@ fun BorderedBox(content: @Composable RowScope.() -> Unit) {
             verticalAlignment = Alignment.Top,
             content = content
         )
+    }
+}
+
+@Composable
+fun MyTopAppBarTwoLinesNoIcon(background: Color, title: String, text: String){
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .height(ScreenSize.height *0.097f)
+        .background(background)
+    ) {
+        Column(modifier = Modifier.align(Alignment.Center).wrapContentWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 3.dp)
+            )
+            Box(modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(5.dp))
+                .padding(1.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium.copy(MaterialTheme.colorScheme.secondary),
+                )
+            }
+        }
+
+    }
+}
+
+@Composable
+fun PlanContainer(background: Color =MaterialTheme.colorScheme.primary ,content: @Composable ColumnScope.() -> Unit){
+    Column(
+        modifier = Modifier
+            .padding(horizontal = ScreenSize.width * 0.055f)
+            .padding(bottom = 15.dp, top = 10.dp)
+            .shadowsPlus(
+                type = ShadowsPlusType.SoftLayer,
+                color = Color.Black.copy(alpha = 0.25f),
+                radius = 4.dp,
+                offset = DpOffset(x = 2.dp, y = 2.dp),
+                spread = 1.dp,
+                shape = RoundedCornerShape(15.dp),
+                isAlphaContentClip = true
+            )
+            .fillMaxWidth()
+            .heightIn(max = 7000.dp, min = ScreenSize.height * 0.725f)
+            .clip(RoundedCornerShape(15.dp))
+            .background(background)
+            .padding(ScreenSize.width * 0.035f)
+    ){
+        content()
+    }
+}
+
+@Composable
+fun AppDialog(
+    imageRes: Int? = null, // GIF або PNG
+    title: String? = null,
+    message: String? = null,
+    confirmText: String,
+    onConfirm: () -> Unit,
+    dismissText: String? = null,
+    onDismiss: (() -> Unit)? = null,
+    cancelable: Boolean = false,
+) {
+    Dialog(
+        onDismissRequest = { if (cancelable) onDismiss?.invoke() },
+        properties = DialogProperties(
+            dismissOnClickOutside = cancelable,
+            dismissOnBackPress = cancelable
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.White)
+                .padding(20.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                AndroidView(
+                    factory = { context ->
+                        ImageView(context).apply {
+                            if (imageRes != null) {
+                                setImageResource(imageRes)
+                            }
+                            val drawable = drawable
+                            if(drawable is Animatable) drawable.start()
+                        }
+                    },
+                    modifier = Modifier.size(140.dp)
+                )
+                title?.let {
+                    Spacer(Modifier.height(30.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
+                message?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium.copy(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(28.dp))
+                }
+                if (dismissText == null) {
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(confirmText, color = MaterialTheme.colorScheme.background)
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { onDismiss?.invoke() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(dismissText, color = MaterialTheme.colorScheme.background)
+                        }
+                        OutlinedButton(
+                            onClick = onConfirm,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(confirmText, color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

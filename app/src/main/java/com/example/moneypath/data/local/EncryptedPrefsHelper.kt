@@ -32,4 +32,12 @@ class EncryptedPrefsHelper @Inject constructor(@ApplicationContext private val c
     fun getToken(): String? = prefs.getString("monobank_token", null)
     fun removeToken() = prefs.edit().remove("monobank_token").apply()
 
+    fun saveGoalName(name: String) = prefs.edit().putString("goal_name", name).apply()
+    fun getGoalName(): String? = prefs.getString("goal_name", null)
+    fun removeGoalName() = prefs.edit().remove("goal_name").apply()
+
+    fun saveGoalAmount(amount: Int) = prefs.edit().putString("goal_amount", amount.toString()).apply()
+    fun getGoalAmount(): String? = prefs.getString("goal_amount", null)
+    fun removeGoalAmount() = prefs.edit().remove("goal_amount").apply()
+
 }

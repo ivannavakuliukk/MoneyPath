@@ -6,7 +6,6 @@ import com.example.moneypath.data.datasource.BackendService
 import com.example.moneypath.data.models.BudgetPlanRequest
 import com.example.moneypath.data.models.BudgetPlanResponse
 import com.example.moneypath.data.models.BudgetPlanResponseSimple
-import com.example.moneypath.data.models.FixedExpenses
 import com.example.moneypath.data.models.MinMonthsRequest
 import com.example.moneypath.data.models.MinMonthsResponse
 import javax.inject.Inject

@@ -160,7 +160,7 @@ fun PinInputScreen(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = 40.dp, bottom = 20.dp)
             )
         }
@@ -255,7 +255,7 @@ fun NumberPad(
                             .padding(6.dp)
                             .clip(CircleShape)
                             .background(Color.White)
-                            .border(1.dp, Color.LightGray, CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.background, CircleShape)
                             .clickable {
                                 when (item) {
                                     "" -> {}

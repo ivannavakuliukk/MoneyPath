@@ -50,7 +50,7 @@ fun BalanceDialog(
     onSave: (Double) -> Unit,
     balance: Double
 ) {
-    var isPositive by remember { mutableStateOf( (balance>0) ) }
+    var isPositive by remember { mutableStateOf( (balance>=0) ) }
     var numberPart by remember { mutableStateOf(balance.toString().removePrefix("-")) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {

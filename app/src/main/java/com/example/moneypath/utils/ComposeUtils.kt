@@ -10,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import com.example.moneypath.data.models.TransactionType
@@ -38,6 +41,19 @@ fun monthWordForm(number: Int): String {
             1 -> "місяць"
             2, 3, 4 -> "місяці"
             else -> "місяців"
+        }
+    }
+}
+
+fun transactionWordForm(number: Int): String {
+    val n = number % 100
+    return if (n in 11..19) {
+        "транзакцій"
+    } else {
+        when (n % 10) {
+            1 -> "транзакція"
+            2, 3, 4 -> "транзакції"
+            else -> "транзакцій"
         }
     }
 }
@@ -107,4 +123,23 @@ val slideOutRight: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitT
         AnimatedContentTransitionScope.SlideDirection.Right,
         animationSpec = tween(800)
     )
+}
+
+// Source - https://stackoverflow.com/a
+// Posted by BennyG
+// Retrieved 2025-11-09, License - CC BY-SA 4.0
+
+fun Modifier.rotateVertically(clockwise: Boolean = true): Modifier {
+    val rotate = rotate(if (clockwise) 90f else -90f)
+
+    val adjustBounds = layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.height, placeable.width) {
+            placeable.place(
+                x = -(placeable.width / 2 - placeable.height / 2),
+                y = -(placeable.height / 2 - placeable.width / 2)
+            )
+        }
+    }
+    return rotate then adjustBounds
 }

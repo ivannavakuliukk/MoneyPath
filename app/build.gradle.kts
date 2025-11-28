@@ -111,5 +111,7 @@ dependencies {
     implementation (libs.androidx.security.crypto)
 
     implementation (libs.reorderable)
+    implementation (libs.mpandroidchart)
+
 
 }

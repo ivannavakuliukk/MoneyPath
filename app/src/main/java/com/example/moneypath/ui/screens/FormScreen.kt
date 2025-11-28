@@ -825,7 +825,7 @@ fun SummaryScreen(state: FormScreenViewModel.UiState, navController: NavControll
         }
     }
     if(state.isLoading){
-        LoadingPlanIndicator()
+        LoadingIndicator("Ваш план завантажується...")
     }else {
         FormContainer(MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.7f)) {
             Text(
@@ -912,6 +912,23 @@ fun SummaryScreen(state: FormScreenViewModel.UiState, navController: NavControll
                         }
                     }
                 }
+                BorderedBox {
+                    Text(
+                        text = "5.",
+                        style = MaterialTheme.typography.titleSmall.copy(textColor),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                    Column {
+                        DiffStyleLine("Гаманці, включені до обліку:", "")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        state.wallets.forEachIndexed { index, wallet ->
+                            DiffStyleLine(
+                                "${index + 1}) ${wallet.name}",
+                                ""
+                            )
+                        }
+                    }
+                }
 
             }
         }
@@ -919,7 +936,7 @@ fun SummaryScreen(state: FormScreenViewModel.UiState, navController: NavControll
 }
 
 @Composable
-fun LoadingPlanIndicator() {
+fun LoadingIndicator(text: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -931,7 +948,7 @@ fun LoadingPlanIndicator() {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Ваш план завантажується...",
+                text = text,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 16.dp),

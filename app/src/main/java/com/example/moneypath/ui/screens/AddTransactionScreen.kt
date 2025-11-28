@@ -74,12 +74,15 @@ import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
     параметри - navController
  */
 @Composable
-fun AddTransactionScreen(navController: NavController, date: Long, viewModel: AddTransactionViewModel = hiltViewModel()){
+fun AddTransactionScreen(navController: NavController, date: Long, isGoal:Boolean, viewModel: AddTransactionViewModel = hiltViewModel()){
     val state = viewModel.uiState
     val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(date) {
         viewModel.onDateChange(date)
+    }
+    LaunchedEffect(isGoal) {
+        viewModel.onGoalChange(isGoal)
     }
     // Показ помилок через Snack bar
     LaunchedEffect(state.error) {

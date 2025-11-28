@@ -159,7 +159,7 @@ fun EditWalletScreen(navController: NavController , walletId: String, viewModel:
                     "\nВсі транзакції цього гаманця видаляться автоматично.",
             onCancelClick =  {showDialog = false},
             onConfirmClick = { viewModel.deleteWallet(walletId)
-            navController.popBackStack() }
+            navController.navigate("mainscreen") }
         )
     }
 }

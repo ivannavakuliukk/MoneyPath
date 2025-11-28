@@ -31,6 +31,7 @@ open class AddTransactionViewModel @Inject constructor(
         val walletId: String = "",
         // для переказу
         val walletIdTo: String = "",
+        val isGoal: Boolean = false,
 
         val categories: List<Category> = Categories.expensesCategory,
         val wallets: List<Wallet> = emptyList(),
@@ -54,6 +55,15 @@ open class AddTransactionViewModel @Inject constructor(
         uiState = uiState.copy(date = newValue)
     }
 
+    fun onGoalChange(newValue: Boolean){
+        uiState = uiState.copy(isGoal = newValue)
+        if (newValue){
+            uiState = uiState.copy(
+                categories = Categories.expensesCategory + Categories.otherCategory[0]
+            )
+        }
+    }
+
     fun onCategoryIdChange(newValue:String){
         uiState = uiState.copy(categoryId = newValue)
     }
@@ -69,7 +79,7 @@ open class AddTransactionViewModel @Inject constructor(
 
     fun onTypeChange(newValue: TransactionType){
         val newCategories = when(newValue){
-            TransactionType.Expense -> Categories.expensesCategory
+            TransactionType.Expense ->  if(uiState.isGoal) Categories.expensesCategory + Categories.otherCategory[0] else Categories.expensesCategory
             TransactionType.Income -> Categories.incomeCategory
             TransactionType.Transfer -> listOf(Categories.otherCategory[1])
         }

@@ -13,12 +13,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.example.moneypath.data.repository.CryptoRepository
 import com.example.moneypath.data.repository.MonobankRepository
 import com.example.moneypath.ui.elements.AppNavHost
 import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.usecase.business.MonobankSyncManager
 import com.example.moneypath.utils.ScreenSize
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,15 +28,23 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject lateinit var syncManager: MonobankSyncManager
     @Inject lateinit var repository: MonobankRepository
+    @Inject lateinit var cryptoRepository: CryptoRepository
 
     override fun onStart() {
         super.onStart()
-        if(repository.hasToken()) {
+        if (repository.hasToken()) {
             lifecycleScope.launch {
+                // чекаємо поки DEK стане доступним
+                while (cryptoRepository.getSessionDEK() == null) {
+                    delay(1000)
+                }
+
+                // DEK готовий — запускаємо синхронізацію
                 syncManager.syncSinceLastVisit()
+                syncManager.startPolling()
             }
-            syncManager.startPolling()
         }
+
     }
 
     override fun onStop() {

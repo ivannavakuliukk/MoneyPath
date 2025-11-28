@@ -34,11 +34,6 @@ class CryptoRepository @Inject constructor(){
         return salt
     }
 
-//    fun generateDEK(): SecretKey {
-//        val keyGen = KeyGenerator.getInstance("AES")
-//        keyGen.init(256)
-//        return keyGen.generateKey()
-//    }
 
     fun deriveMasterKey(password: String, salt: ByteArray): SecretKey {
         // Вибір алгоритму залежно від версії Android

@@ -1,25 +1,26 @@
 package com.example.moneypath.usecase.business
 
 import android.util.Log
-import com.example.moneypath.data.models.BudgetPlanDB
+import com.example.moneypath.data.local.PrefsHelper
 import com.example.moneypath.data.models.BudgetPlanRequest
 import com.example.moneypath.data.models.BudgetPlanResponse
 import com.example.moneypath.data.models.BudgetPlanResponseSimple
 import com.example.moneypath.data.models.Categories
 import com.example.moneypath.data.models.FixedExpenses
-import com.example.moneypath.data.models.Transaction
+import com.example.moneypath.data.models.SettingsDB
 import com.example.moneypath.data.models.toDb
 import com.example.moneypath.data.repository.BackendRepository
 import com.example.moneypath.data.repository.FirebaseRepository
 import com.example.moneypath.ui.viewmodel.FormScreenViewModel
 import com.example.moneypath.usecase.crypto.GetWalletBalanceUseCase
 import com.example.moneypath.utils.calculatePlanDates
-import java.time.YearMonth
+import com.example.moneypath.utils.getTodayDate
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
 /*
-    Включає FirebaseRepository та OptimizeRepository
+    Use Case - оптимізація (створення плану)
+    Включає FirebaseRepository та BackendRepository
     1. Зберігаємо елементи налаштування плану в firebase
     2. Через Апі здійснюємо оптимізацію (рахуємо поточний план і додаткові)
     3. Зберігаємо поточний план та додаткові в Firebase
@@ -28,7 +29,8 @@ import kotlin.math.roundToInt
 class OptimizeUseCase @Inject constructor(
     private val firebaseRepository:FirebaseRepository,
     private val backendRepository: BackendRepository,
-    private val useCase: GetWalletBalanceUseCase
+    private val useCase: GetWalletBalanceUseCase,
+    private val helper: PrefsHelper
 ){
     sealed class Result {
         object Success: Result()
@@ -39,6 +41,14 @@ class OptimizeUseCase @Inject constructor(
         return try {
             // Видаляємо попередній план
             firebaseRepository.deleteUserPlanning()
+            firebaseRepository.deleteTransactionsByCategory("goal")
+            helper.clearAll()
+            // Зберігаємо імя та суму цілі якщо вона є в sharedpref
+            if(state.isGoal && state.goalAmount!= null && state.goalName != null){
+                helper.saveGoalName(state.goalName)
+                helper.saveGoalAmount(state.goalAmount)
+            }
+
             // 1. Обраховуємо баланс користувача на обраних гаманцях
             var userBalance = 0.0
             state.wallets.forEach { wallet ->
@@ -55,7 +65,7 @@ class OptimizeUseCase @Inject constructor(
                 Categories.expensesCategory.find { name == it.name }?.id ?:""
             }
 
-            // 2. Створюємо об'єкт налаштування плану
+            // 2. Створюємо об'єкт для запиту до апі
             val request = BudgetPlanRequest(
                 // плюс поточний баланс
                 balance = state.currentIncome.toDouble() + userBalance,
@@ -69,32 +79,62 @@ class OptimizeUseCase @Inject constructor(
                 priorities = state.priorities,
                 months = state.months,
                 goal = state.goalAmount,
-                fixed_categories = fixedCategories,
-                fixed_amount_stable = state.fixedAmountStable,
-                fixed_amount_current = state.fixedAmountCurrent
             )
 
-            // 3. Зберігаємо налаштування плану в firebase
-            if (!firebaseRepository.updateSetup(request)) throw Exception("Дані не збереглися")
+            // 3. Створюємо об'єкт налаштувань та зберігаємо в firebase
+            val settings = SettingsDB(
+                goal = state.isGoal,
+                months = state.months,
+                goal_name = state.goalName,
+                goal_amount = state.goalAmount,
+                fixed_categories = fixedCategories,
+                fixed_amount_stable = state.fixedAmountStable,
+                fixed_amount_current = state.fixedAmountCurrent,
+                categories = categories,
+                bounds = state.bounds.map { listOf(it.first, it.second) },
+                priorities = state.priorities,
+                stable_income = state.stableIncome,
+                current_income = state.currentIncome,
+                wallets = state.wallets.map { it.id }.toList(),
+                min_month = state.minMonth
+            )
+            Log.d("OptimizeUseCase", state.wallets.map { it.id }.toList().toString())
+            if (!firebaseRepository.updateSetup(settings)) throw Exception("Дані не збереглися")
 
-            // 4. Обраховуємо кінець поточного і стабільного плану
-            val(current_plan_end, stable_plan_end) = calculatePlanDates(state.months)
+            // 4. Обраховуємо кінець поточного і стабільного плану і початок плану
+            val(currentPlanEnd, stablePlanEnd) = calculatePlanDates(state.months)
+            val planStart = getTodayDate()
 
             // 5. Обраховуємо поточний план
-            var result: Any? = null
-            result = if (state.isGoal) {
+            val result: Any? = if (state.isGoal) {
                 backendRepository.getOptimizedPlanGoal(request)
             } else {
                 backendRepository.getOptimizedPlanSimple(request)
             }
             // 6. Зберігаємо поточний план в бд
+            val fixedCurrentMap = fixedCategories.zip(state.fixedAmountCurrent.map { it.toDouble() }).toMap()
+            val fixedStableMap = fixedCategories.zip(state.fixedAmountStable.map { it.toDouble() }).toMap()
             if(result!=null){
                 when(result){
                     is BudgetPlanResponse -> firebaseRepository.updateTotalPlan(
-                        result.toDb(currentEnd = current_plan_end, stableEnd =  stable_plan_end, months = state.months)
+                        result.toDb(
+                            currentEnd = currentPlanEnd,
+                            stableEnd =  stablePlanEnd,
+                            planStart = planStart,
+                            months = state.months,
+                            currentFixed = fixedCurrentMap,
+                            stableFixed = fixedStableMap,
+                            income = state.stableIncome
+                        )
                     )
                     is BudgetPlanResponseSimple -> firebaseRepository.updateTotalPlan(
-                        result.toDb(currentEnd = current_plan_end)
+                        result.toDb(
+                            currentEnd = currentPlanEnd,
+                            planStart = planStart,
+                            currentFixed = fixedCurrentMap,
+                            stableFixed = fixedStableMap,
+                            income = state.stableIncome
+                        )
                     )
                 }
             }else throw Exception("Оптимізація не вдалася")
@@ -112,7 +152,15 @@ class OptimizeUseCase @Inject constructor(
                     )
                     val addResult = backendRepository.getOptimizedPlanGoal(requestWithNewMonths)
                     if(addResult != null){
-                        firebaseRepository.addAdditionalPlan(addResult.toDb(null, null, term), index )
+                        firebaseRepository.addAdditionalPlan(addResult.toDb(
+                            planStart = planStart,
+                            currentEnd = null,
+                            stableEnd = null,
+                            months = term,
+                            currentFixed = fixedCurrentMap,
+                            stableFixed = fixedStableMap,
+                            income = state.stableIncome
+                        ), index )
                     }else throw Exception("Оптимізація додаткових планів не вдалася")
                 }
             }

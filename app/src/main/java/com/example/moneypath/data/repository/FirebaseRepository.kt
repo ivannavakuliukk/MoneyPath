@@ -6,10 +6,12 @@ import android.util.Log
 import androidx.compose.animation.core.snap
 import com.example.moneypath.data.models.BudgetPlanDB
 import com.example.moneypath.data.models.BudgetPlanRequest
+import com.example.moneypath.data.models.SettingsDB
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.utils.getDayRangeFromUnix
 import com.example.moneypath.utils.unixToDate
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
@@ -18,7 +20,9 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.getValue
 import kotlinx.coroutines.tasks.await
+import okhttp3.internal.concurrent.Task
 import java.util.UUID
 import javax.inject.Inject
 
@@ -39,6 +43,8 @@ class FirebaseRepository @Inject constructor(
     private var walletsListener: ValueEventListener? = null
     private var transactionsCurrentListener: ValueEventListener? = null
     private var transactionsQuery: Query? = null
+    private var transactionsGoalCurrentListener: ValueEventListener? = null
+    private var transactionsGoalQuery: Query? = null
 
     // --- Акаунт ---
 
@@ -96,6 +102,17 @@ class FirebaseRepository @Inject constructor(
             }
         }
         getUserWalletsRef()?.addValueEventListener(walletsListener!!)
+    }
+
+    // Перевірити чи гаманці існують
+    suspend fun checkIfWalletsExist(): Boolean {
+        return try {
+            val snapshot = getUserWalletsRef()?.get()?.await()
+            snapshot != null && snapshot.exists() && snapshot.childrenCount > 0
+        } catch (e: Exception) {
+            Log.e("checkIfWalletsExist", "Error checking wallets: ${e.message}")
+            false
+        }
     }
 
     // Видалити Listener
@@ -276,6 +293,48 @@ class FirebaseRepository @Inject constructor(
         transactionsCurrentListener = null
     }
 
+    /*
+    Отримати список транзакцій за конкретну категорію
+    Створення нового Listener на кожну категорію
+     */
+    fun getTransactionsByCategory(
+        categoryId: String,
+        onUpdate: (List<Transaction>) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        transactionsGoalCurrentListener?.let { listener ->
+            transactionsQuery?.removeEventListener(listener)
+        }
+
+        transactionsGoalQuery = getUserTransactionsRef()
+            ?.orderByChild("categoryId")
+            ?.equalTo(categoryId)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val transactions =
+                    snapshot.children.mapNotNull { it.getValue(Transaction::class.java) }
+                onUpdate(transactions)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("Firebase Repository", "Problem in transactions reading, ${error.message}")
+                onError("Проблема при завантаженні транзакцій")
+            }
+        }
+
+        transactionsGoalQuery?.addValueEventListener(listener)
+        transactionsGoalCurrentListener = listener
+    }
+
+    fun removeTransactionsGoalEventListener() {
+        transactionsGoalCurrentListener?.let {
+            getUserWalletsRef()?.removeEventListener(it)
+        }
+        transactionsGoalCurrentListener = null
+    }
+
+
     // Видалити транзакції певного гаманця
     private suspend fun deleteTransactionsByWallet(walletId: String): Boolean {
         return try {
@@ -289,6 +348,52 @@ class FirebaseRepository @Inject constructor(
             false
         }
     }
+
+    // Видалити транзакції певної категорії
+    suspend fun deleteTransactionsByCategory(categoryId: String): Boolean {
+        return try {
+            val query = getUserTransactionsRef()
+                ?.orderByChild("categoryId")
+                ?.equalTo(categoryId)
+
+            query?.get()?.await()?.children?.forEach { snapshot ->
+                snapshot.ref.removeValue().await()
+            }
+
+            true
+        } catch (e: Exception) {
+            Log.d("Firebase Repository", "Error deleting category transactions", e)
+            false
+        }
+    }
+
+
+    // Отримати транзакції між двома датами (одноразово)
+    suspend fun getTransactionsBetweenDates(
+        startDate: Long,
+        endDate: Long,
+        walletIds: List<String>? = null // якщо null — беремо всі гаманці
+    ): List<Transaction> {
+        return try {
+            val query = getUserTransactionsRef()
+                ?.orderByChild("date")
+                ?.startAt(startDate.toDouble())
+                ?.endAt(endDate.toDouble())
+
+            val snapshot = query?.get()?.await()
+            val transactions = snapshot?.children?.mapNotNull { it.getValue(Transaction::class.java) } ?: emptyList()
+            // Фільтруємо по walletId, якщо переданий список
+            if (!walletIds.isNullOrEmpty()) {
+                transactions.filter { it.walletId in walletIds }
+            } else {
+                transactions
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseRepository", "Error getting transactions", e)
+            emptyList()
+        }
+    }
+
 
     // --Дані для шифрування--
 
@@ -399,7 +504,7 @@ class FirebaseRepository @Inject constructor(
         }
     }
 
-    suspend fun updateSetup(data: BudgetPlanRequest): Boolean{
+    suspend fun updateSetup(data: SettingsDB): Boolean{
         return try {
             getUserPlanningRef()?.child("set_up")?.setValue(data)?.await()
             true
@@ -409,6 +514,46 @@ class FirebaseRepository @Inject constructor(
         }
     }
 
+    suspend fun getSetupFixedCategoriesStable(stable:Boolean): Map<String, Double>? {
+        val pathString = if(stable)"fixed_amount_stable" else "fixed_amount_current"
+        return try {
+            val namesSnapshot = getUserPlanningRef()?.child("set_up")?.child("fixed_categories")?.get()?.await()
+            val categoriesNames = namesSnapshot?.children?.mapNotNull { it.getValue(String::class.java) } ?: emptyList()
+            val amountsSnapshot = getUserPlanningRef()?.child("set_up")?.child(pathString)?.get()?.await()
+            val categoriesAmount = amountsSnapshot?.children?.mapNotNull { it.getValue(Double::class.java) } ?: emptyList()
+            if (categoriesNames.size != categoriesAmount.size) {
+                Log.d("Firebase Repository", "Names and amounts size mismatch")
+                null
+            } else {
+                categoriesNames.zip(categoriesAmount).toMap()
+            }
+        } catch (e: Exception) {
+            Log.d("Firebase Repository", "Error fetching setup", e)
+            null
+        }
+    }
+
+    suspend fun getSetup(): SettingsDB? {
+        return try {
+            val snapshot = getUserPlanningRef()?.child("set_up")?.get()?.await()
+            snapshot?.getValue(SettingsDB::class.java)
+        } catch (e: Exception) {
+            Log.d("Firebase Repository", "Error fetching setup", e)
+            null
+        }
+    }
+
+    suspend fun getSetupWallets(): List<String>?{
+        return try{
+            val snapshot = getUserPlanningRef()?.child("set_up")?.child("wallets")?.get()?.await()
+            snapshot?.children?.mapNotNull { it.getValue(String::class.java) }
+        }catch (e:Exception){
+            Log.d("Firebase Repository", "Error fetching setup wallets")
+            null
+        }
+    }
+
+
     suspend fun updateTotalPlan(data: BudgetPlanDB): Boolean{
         return try {
             getUserPlanningRef()?.child("total_plan")?.setValue(data)?.await()
@@ -416,6 +561,26 @@ class FirebaseRepository @Inject constructor(
         } catch (e: Exception) {
             Log.d("Firebase Repository", "Error adding total plan", e)
             false
+        }
+    }
+
+    suspend fun getTotalPlan():BudgetPlanDB?{
+        return try{
+            val snapshot = getUserPlanningRef()?.child("total_plan")?.get()?.await()
+            snapshot?.getValue(BudgetPlanDB::class.java)
+        }catch (e: Exception) {
+            Log.d("Firebase Repository", "Can`t get total plan", e)
+            null
+        }
+    }
+
+    suspend fun getTotalPlanEnd():Long?{
+        return try{
+            val snapshot = getUserPlanningRef()?.child("total_plan")?.child("stable_plan_end")?.get()?.await()
+            snapshot?.getValue(Long::class.java)
+        }catch (e: Exception) {
+            Log.d("Firebase Repository", "Can`t get total plan end", e)
+            null
         }
     }
 
@@ -428,6 +593,25 @@ class FirebaseRepository @Inject constructor(
             false
         }
     }
+
+    suspend fun getAdditionalPlans(): List<BudgetPlanDB> {
+        return try {
+            val ref = getUserPlanningRef()?.child("additional_plans") ?: return emptyList()
+            val snapshot = ref.get().await()
+            val plans = mutableListOf<BudgetPlanDB>()
+
+            for (child in snapshot.children) {
+                val plan = child.getValue(BudgetPlanDB::class.java)
+                if (plan != null) plans.add(plan)
+            }
+
+            plans
+        } catch (e: Exception) {
+            Log.e("FirebaseRepository", "Error getting additional plans", e)
+            emptyList()
+        }
+    }
+
 
 
 

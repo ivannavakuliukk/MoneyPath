@@ -29,7 +29,8 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = Color(0xFFE46458),
     onTertiary = Color(0xFF05AEA0),
     surfaceDim = Color(0xFFDFBB1B),
-    inversePrimary = Color(0xFFFFD93B)
+    inversePrimary = Color(0xFFFFD93B),
+    tertiaryContainer = Color(0xFF4FC3F7)
 )
 
 object Inter {
@@ -79,6 +80,11 @@ fun AdaptiveTypography(): Typography {
         displayMedium = TextStyle(
             fontFamily = Inter.Regular,
             fontSize = (10*scale).sp,
+            fontWeight = FontWeight.Normal
+        ),
+        displayLarge = TextStyle(
+            fontFamily = Inter.Regular,
+            fontSize = (11*scale).sp,
             fontWeight = FontWeight.Normal
         ),
         // Гроші

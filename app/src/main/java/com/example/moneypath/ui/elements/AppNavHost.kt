@@ -46,13 +46,18 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             exitTransition = slideOutRight
 
         ) { AddWalletScreen(navController) }
-        composable("addtransaction/{date}",
+        composable(
+            "addtransaction/{date}/{isGoal}",
             enterTransition = slideInLeft,
             exitTransition = slideOutRight,
-            arguments = listOf(navArgument("date"){type = NavType.LongType})
-        ) { backStackEntry->
-            val date = backStackEntry.arguments?.getLong("date")?:(Calendar.getInstance().timeInMillis/1000)
-            AddTransactionScreen(navController, date)
+            arguments = listOf(
+                navArgument("date") { type = NavType.LongType },
+                navArgument("isGoal") { type = NavType.BoolType }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getLong("date") ?: (Calendar.getInstance().timeInMillis / 1000)
+            val isGoal = backStackEntry.arguments?.getBoolean("isGoal") ?: false
+            AddTransactionScreen(navController, date, isGoal)
         }
         composable(
             route ="editwallet/{walletId}",
