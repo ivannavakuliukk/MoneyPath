@@ -24,7 +24,6 @@ import com.example.moneypath.utils.slideInLeft
 import com.example.moneypath.utils.slideOutRight
 import java.util.Calendar
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
 

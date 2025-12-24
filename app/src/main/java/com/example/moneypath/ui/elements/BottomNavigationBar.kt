@@ -19,9 +19,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
-import coil.compose.rememberAsyncImagePainter
+
 
 
 
@@ -58,7 +59,7 @@ fun BottomNavigationBar(navController:NavController) {
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
-                            rememberAsyncImagePainter(item.icon),
+                            painterResource(id = item.icon),
                             contentDescription = null,
                             modifier = Modifier.fillMaxHeight(0.4f),
                             tint = MaterialTheme.colorScheme.onPrimary

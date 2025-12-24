@@ -35,6 +35,9 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -44,9 +47,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeCompilerApi
 import androidx.compose.runtime.getValue
@@ -56,9 +62,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
@@ -72,10 +80,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
-import coil.size.Size
 import com.example.moneypath.R
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.utils.AppTextFieldColors
@@ -156,7 +160,7 @@ fun MyTopAppBar(background: Color, title: String, onClick: () -> Unit){
                 modifier = Modifier.width(ScreenSize.width*0.041f)
             ) {
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.cancel_white),
+                    painter = painterResource(R.drawable.cancel_white),
                     contentDescription = null,
                 )
             }
@@ -204,7 +208,7 @@ fun MyTopAppBarTwoLines(background: Color, title: String, text: String, onClick:
                 modifier = Modifier.width(ScreenSize.width*0.041f)
             ) {
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.cancel_white),
+                    painter = painterResource(R.drawable.cancel_white),
                     contentDescription = null,
                 )
             }
@@ -337,7 +341,7 @@ fun AppInputRow(
     ) {
         contentInFront()
         Image(
-            painter = rememberAsyncImagePainter(iconRes),
+            painter = painterResource(iconRes),
             contentDescription = null,
             modifier = Modifier.fillMaxHeight(0.45f)
         )
@@ -455,21 +459,14 @@ fun WalletDropDownMenu(
 }
 
 @Composable
-fun AppDatePicker(
-    onDateChange: (Long) -> Unit,
+fun TextFieldForDate(
+    onClick: () -> Unit,
     textFieldColors: TextFieldColors,
     modifier: Modifier,
     stateDate: Long,
     height: Float,
     iconPadding: Int? = null
 ){
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance().apply {
-        timeInMillis = stateDate * 1000
-    }
-    val todayDate = Calendar.getInstance()
-    val maxDateMillis = todayDate.timeInMillis
-
     Box(modifier) {
         OutlinedTextField(
             value = formattedDate(stateDate),
@@ -478,22 +475,7 @@ fun AppDatePicker(
             textStyle = MaterialTheme.typography.bodySmall,
             modifier = Modifier
                 .fillMaxHeight(height)
-                .clickable {
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, dayOfMonth ->
-                            val selectedCal = Calendar.getInstance()
-                            selectedCal.set(year, month, dayOfMonth)
-                            onDateChange(selectedCal.timeInMillis / 1000) // секунди
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH),
-                    ).apply {
-                        datePicker.maxDate = maxDateMillis
-                        setTitle(null)
-                    }.show()
-                },
+                .clickable { onClick() },
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.DateRange,
@@ -555,7 +537,7 @@ fun TitleRow(text: String){
             modifier = Modifier.weight(1f)
         )
         Icon(
-            painter = rememberAsyncImagePainter(R.drawable.hint),
+            painter = painterResource(R.drawable.hint),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.size(21.dp)
@@ -575,7 +557,7 @@ fun InputRowWithIcon(iconRes: Int, value: String, onValueChange: (String)->Unit,
         verticalAlignment = Alignment.CenterVertically
     ){
         Image(
-            painter = rememberAsyncImagePainter(iconRes),
+            painter = painterResource(iconRes),
             contentDescription = null,
             modifier = Modifier.size(30.dp).weight(0.1f)
         )
@@ -790,3 +772,63 @@ fun AppDialog(
         }
     }
 }
+
+// modal date picker
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppDatePickerDialog(chosenDate: Long, onDateChange: (Long) -> Unit, onDismiss: ()-> (Unit)){
+    val todayDate = Calendar.getInstance()
+    // Визначаєм можливі дати - не більше за сьогодні
+    val selectableDates = object : SelectableDates {
+        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+            return utcTimeMillis <= todayDate.timeInMillis
+        }
+    }
+    val datePickerState = rememberDatePickerState(selectableDates = selectableDates, initialSelectedDateMillis = chosenDate*1000)
+    DatePickerDialog(
+        onDismissRequest = {onDismiss()},
+        confirmButton = {
+            TextButton(onClick = {
+                onDateChange(
+                    datePickerState.selectedDateMillis?.div(1000)
+                        ?: (todayDate.timeInMillis / 1000)
+                )
+                onDismiss()
+            }) {
+                Text("OK", color = MaterialTheme.colorScheme.secondary)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {onDismiss()}) {
+                Text("Скасувати", color = MaterialTheme.colorScheme.onPrimary)
+            }
+        },
+        colors = DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.primary
+        ),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier.scale(0.9f)
+    ) {
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                headlineContentColor = MaterialTheme.colorScheme.secondary,
+                titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                weekdayContentColor = MaterialTheme.colorScheme.onPrimary,
+                dayContentColor = MaterialTheme.colorScheme.secondary,
+                disabledDayContentColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                selectedDayContentColor = MaterialTheme.colorScheme.background,
+                selectedDayContainerColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
+                todayContentColor = MaterialTheme.colorScheme.onPrimary,
+                dateTextFieldColors = OutlinedTextFieldDefaults.colors(
+                    unfocusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                    focusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.onPrimary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        )
+    }
+}
+

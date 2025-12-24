@@ -41,13 +41,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.R
 import com.example.moneypath.SignInActivity
 import com.example.moneypath.ui.elements.AppAlertDialog
@@ -131,7 +131,7 @@ fun OtherScreen(navController: NavController, viewModel: OtherViewModel = hiltVi
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Image(
-                            painter = rememberAsyncImagePainter(R.drawable.mono),
+                            painter = painterResource(R.drawable.mono),
                             contentDescription = null,
                             modifier = Modifier.fillMaxHeight(0.6f)
                         )
@@ -159,7 +159,7 @@ fun OtherScreen(navController: NavController, viewModel: OtherViewModel = hiltVi
                                         )
                                     )
                                     Image(
-                                        painter = rememberAsyncImagePainter(R.drawable.arrow_rigth),
+                                        painter = painterResource(R.drawable.arrow_rigth),
                                         contentDescription = null,
                                         modifier = Modifier.height(15.dp).padding(start = 5.dp)
                                     )
@@ -190,7 +190,7 @@ fun OtherScreen(navController: NavController, viewModel: OtherViewModel = hiltVi
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Image(
-                            painter = rememberAsyncImagePainter(R.drawable.user),
+                            painter = painterResource(R.drawable.user),
                             contentDescription = null,
                             modifier = Modifier.fillMaxHeight(0.4f)
                         )
@@ -346,7 +346,7 @@ fun OtherScreen(navController: NavController, viewModel: OtherViewModel = hiltVi
 
 @Composable
 fun ClickableRow(text: String, enabled: Boolean = true, content : @Composable RowScope.() ->Unit = {Image(
-    painter = rememberAsyncImagePainter(R.drawable.arrow_rigth),
+    painter = painterResource(R.drawable.arrow_rigth),
     contentDescription = null,
     modifier = Modifier.height(15.dp).padding(start = 5.dp)
 )}, onClick: () -> Unit) {

@@ -40,8 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -166,7 +166,7 @@ fun TextBox(){
             .padding(ScreenSize.width * 0.035f)
     ){
         Image(
-            painter = rememberAsyncImagePainter(R.drawable.hint),
+            painter = painterResource(R.drawable.hint),
             contentDescription = null,
             modifier = Modifier.size(ScreenSize.width*0.06f)
         )
@@ -321,7 +321,7 @@ fun DataBox(
                     }
 
                     Icon(
-                        painter = rememberAsyncImagePainter(R.drawable.arrow_rigth),
+                        painter = painterResource(R.drawable.arrow_rigth),
                         tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                         contentDescription = null,
                         modifier = Modifier.fillMaxHeight(0.85f)

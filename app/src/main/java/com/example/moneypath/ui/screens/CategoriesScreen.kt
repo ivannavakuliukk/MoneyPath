@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,23 +23,33 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -51,33 +63,28 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.R
 import com.example.moneypath.data.models.PieSlice
 import com.example.moneypath.data.models.findCategoryById
 import com.example.moneypath.ui.elements.BottomNavigationBar
 import com.example.moneypath.ui.elements.CategoryDonutChart
-import com.example.moneypath.ui.elements.ContainerForDataBox
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBarNoIcon
 import com.example.moneypath.ui.elements.PagerIndicator
 import com.example.moneypath.ui.viewmodel.CategoriesViewModel
 import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.utils.formatMonthYear
-import com.example.moneypath.utils.formattedDate
-import com.example.moneypath.utils.getCurrentMonthBounds
+import com.example.moneypath.utils.getMonthBounds
 import com.example.moneypath.utils.transactionWordForm
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType
 import com.gigamole.composeshadowsplus.common.shadowsPlus
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 import java.util.Calendar
 import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 @Composable
 fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewModel = hiltViewModel()) {
@@ -301,7 +308,7 @@ fun ButtonToFormScreen(state: CategoriesViewModel.UiState, navController: NavCon
                     style = MaterialTheme.typography.titleMedium
                 )
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.arrow_),
+                    painter = painterResource(R.drawable.arrow_),
                     contentDescription = null,
                     modifier = Modifier.width(50.dp).height(30.dp)
                 )
@@ -390,7 +397,7 @@ fun PlannedCategoryLine(
         var progress: Float = 0.0f
         var color: Color = MaterialTheme.colorScheme.background
         Image(
-            painter = rememberAsyncImagePainter(iconRes),
+            painter = painterResource(iconRes),
             contentDescription = null,
             modifier = Modifier.size(35.dp)
         )
@@ -480,6 +487,8 @@ fun PlannedCategoryLine(
     }
 }
 
+// Top bar з якого відкривається docked date picker
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (Long, Long)-> Unit){
     Row(
@@ -487,13 +496,26 @@ fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (L
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val context = LocalContext.current
-        val (startDateSec, endDateSec) = state.dates ?: getCurrentMonthBounds()
-        val calendar = Calendar.getInstance().apply {
-            timeInMillis = startDateSec * 1000
-        }
+        var showDatePickerDocked by remember { mutableStateOf(false) }
+        val (startDateSec, endDateSec) = state.dates ?: getMonthBounds()
         val todayDate = Calendar.getInstance()
-        val maxDateMillis = todayDate.timeInMillis
+        // Визначаєм можливі дати - не більше за сьогодні
+        val selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= todayDate.timeInMillis
+            }
+        }
+        val datePickerState = rememberDatePickerState(selectableDates = selectableDates, initialSelectedDateMillis = startDateSec*1000)
+        // відстежуємо натискання користувачем на дату
+        LaunchedEffect(datePickerState.selectedDateMillis) {
+            val selectedRangeInMillis =
+                getMonthBounds(datePickerState.selectedDateMillis ?: 0L)
+            onDateRangeSelected(
+                selectedRangeInMillis.first,
+                selectedRangeInMillis.second
+            )
+            showDatePickerDocked = false
+        }
         Text(
             text = formatMonthYear(startDateSec, endDateSec),
             style = MaterialTheme.typography.labelLarge,
@@ -503,43 +525,41 @@ fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (L
             modifier = Modifier
                 .fillMaxHeight()
                 .wrapContentWidth()
-                .clickable {
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, _ ->
-                            // Коли обрали будь-який день місяця,
-                            // формуємо початок і кінець місяця
-                            val startCal = Calendar.getInstance().apply {
-                                set(year, month, 1, 0, 0, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-
-                            val endCal = Calendar.getInstance().apply {
-                                set(year, month, 1, 23, 59, 59)
-                                set(Calendar.MILLISECOND, 999)
-                                set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH))
-                            }
-
-                            // Передаємо пару початок/кінець місяця у state
-                            onDateRangeSelected(startCal.timeInMillis / 1000, endCal.timeInMillis / 1000)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)
-                    ).apply {
-                        datePicker.maxDate = maxDateMillis
-                        setTitle(null)
-                    }.show()
-                }
-        )
-        {
+                .clickable { showDatePickerDocked = !showDatePickerDocked }
+        ) {
             Icon(
-                painter = rememberAsyncImagePainter(R.drawable.calendar),
+                painter = painterResource(R.drawable.calendar),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxHeight(0.4f).padding(start = 5.dp).align(Alignment.Center)
             )
-
+        }
+        if(showDatePickerDocked){
+            Popup(onDismissRequest = {showDatePickerDocked = false}, alignment = Alignment.TopStart)
+            {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = ScreenSize.height* 0.07f).wrapContentHeight()
+                        .background(Color.Transparent).scale(0.9f).shadow(5.dp)
+                ){
+                    Column {
+                        DatePicker(
+                            state = datePickerState,
+                            showModeToggle = false,
+                            title = null,
+                            headline = null,
+                            colors = DatePickerDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                weekdayContentColor = MaterialTheme.colorScheme.onPrimary,
+                                dayContentColor = MaterialTheme.colorScheme.secondary,
+                                disabledDayContentColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                                selectedDayContentColor = MaterialTheme.colorScheme.background,
+                                selectedDayContainerColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
+                                todayContentColor = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 }

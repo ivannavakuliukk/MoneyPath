@@ -12,7 +12,7 @@ import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.findCategoryById
 import com.example.moneypath.data.repository.FirebaseRepository
 import com.example.moneypath.usecase.business.GetTransactionsByCategories
-import com.example.moneypath.utils.getCurrentMonthBounds
+import com.example.moneypath.utils.getMonthBounds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -54,7 +54,7 @@ class CategoriesViewModel @Inject constructor(
     private suspend fun updatePlan() :Boolean {
         val plan = repository.getTotalPlan()
 
-        val (startDate, endDate) = uiState.dates ?: getCurrentMonthBounds()
+        val (startDate, endDate) = uiState.dates ?: getMonthBounds()
 
         if (plan == null || endDate * 1000 < plan.plan_start) {
             // Місяць до створення плану або плану немає

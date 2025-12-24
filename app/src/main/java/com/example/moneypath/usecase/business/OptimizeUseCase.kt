@@ -114,6 +114,7 @@ class OptimizeUseCase @Inject constructor(
             // 6. Зберігаємо поточний план в бд
             val fixedCurrentMap = fixedCategories.zip(state.fixedAmountCurrent.map { it.toDouble() }).toMap()
             val fixedStableMap = fixedCategories.zip(state.fixedAmountStable.map { it.toDouble() }).toMap()
+            Log.d("OptimizeUseCase", result.toString())
             if(result!=null){
                 when(result){
                     is BudgetPlanResponse -> firebaseRepository.updateTotalPlan(

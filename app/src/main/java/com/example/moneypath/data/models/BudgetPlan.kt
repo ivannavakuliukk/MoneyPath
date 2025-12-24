@@ -9,7 +9,7 @@ data class BudgetPlanRequest(
     val fixed_expenses: FixedExpenses = FixedExpenses(),
     val categories: List<String> = emptyList(),
     val bounds: List<List<Int>> = emptyList(),
-    val priorities: List<Int> = emptyList()
+    val priorities: List<Double> = emptyList()
 )
 
 // Модель - відповідь (план з ціллю)
@@ -69,7 +69,7 @@ data class SettingsDB(
     val fixed_amount_stable: List<Int> = emptyList(),
     val categories: List<String> = emptyList(),
     val bounds: List<List<Int>> = emptyList(),
-    val priorities: List<Int> = emptyList(),
+    val priorities: List<Double> = emptyList(),
     val stable_income: Int = 0,
     val current_income: Int = 0,
     val wallets: List<String> = emptyList()

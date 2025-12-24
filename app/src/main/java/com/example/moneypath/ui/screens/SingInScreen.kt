@@ -45,7 +45,6 @@ import com.example.moneypath.R
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType
 import com.gigamole.composeshadowsplus.common.shadowsPlus
 import androidx.compose.ui.unit.DpOffset
-import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 
@@ -104,7 +103,7 @@ fun SingInScreen(onSignInClick: () -> Unit) {
         ) {
             Box(modifier = Modifier.weight(0.62f).fillMaxWidth()) {
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.background),
+                    painter = painterResource(R.drawable.background),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize()
@@ -130,7 +129,7 @@ fun SingInScreen(onSignInClick: () -> Unit) {
                         }
                     ) {
                         Image(
-                            painter = rememberAsyncImagePainter(R.drawable.logo),
+                            painter = painterResource(R.drawable.logo),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth(0.57f)
@@ -209,7 +208,7 @@ fun SingInScreen(onSignInClick: () -> Unit) {
                     .weight(0.059f)
             ) {
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.background2),
+                    painter = painterResource(R.drawable.background2),
                     contentDescription = null,
                     modifier = Modifier.matchParentSize().align(Alignment.BottomCenter),
                     contentScale = ContentScale.Crop,

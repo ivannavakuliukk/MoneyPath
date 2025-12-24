@@ -28,7 +28,7 @@ class FormScreenViewModel @Inject constructor(
         val goalAmount: Int? = null,
         val categories: List<String> = emptyList(),
         val newOrderCategories: List<String> = emptyList(),
-        val priorities: List<Int> = emptyList(),
+        val priorities: List<Double> = emptyList(),
         val bounds: List<Pair<Int, Int>> = emptyList(),
         val fixedCategories: List<String> = emptyList(),
         val fixedAmountCurrent: List<Int> = emptyList(),
@@ -276,7 +276,7 @@ class FormScreenViewModel @Inject constructor(
         // Шукаємо індекси переставлених категорій та робимо з них пріоритети:
         // чим менше від'ємне число - це важливіша категорія
         val priorities = uiState.categories.map {
-            category-> uiState.newOrderCategories.indexOf(category) - size
+            category-> (uiState.newOrderCategories.indexOf(category) - size).toDouble()/10
         }
         uiState = uiState.copy(priorities = priorities)
         Log.d("FormScreenViewModel", "priorities: $priorities \n categories: ${uiState.categories} \n neworder: ${uiState.newOrderCategories}")

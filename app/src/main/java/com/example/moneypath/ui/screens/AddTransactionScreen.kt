@@ -54,11 +54,12 @@ import com.example.moneypath.R
 import com.example.moneypath.data.models.TransactionType
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.ui.elements.AppButton
-import com.example.moneypath.ui.elements.AppDatePicker
+import com.example.moneypath.ui.elements.AppDatePickerDialog
 import com.example.moneypath.ui.elements.AppInputRow
 import com.example.moneypath.ui.elements.ContainerForDataBox
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBar
+import com.example.moneypath.ui.elements.TextFieldForDate
 import com.example.moneypath.ui.elements.WalletDropDownMenu
 import com.example.moneypath.ui.viewmodel.AddTransactionViewModel
 import com.example.moneypath.utils.AppTextFieldColors
@@ -311,7 +312,7 @@ fun IncomeExpensesDataBox(
 ){
     ContainerForDataBox {
         // Гаманець
-        var selectedWallet = state.wallets.firstOrNull { it.id == state.walletId }
+        val selectedWallet = state.wallets.firstOrNull { it.id == state.walletId }
         if (selectedWallet!= null){
             AppInputRow(
                 iconRes = if(selectedWallet.type == WalletType.Cash) R.drawable.cash else R.drawable.card,
@@ -367,7 +368,7 @@ fun IncomeExpensesDataBox(
             }
         }
         // Категорія
-        var selectedCategory = state.categories.firstOrNull { it.id == state.categoryId }
+        val selectedCategory = state.categories.firstOrNull { it.id == state.categoryId }
         if(selectedCategory!=null){
             AppInputRow(
                 iconRes = selectedCategory.iconRes,
@@ -423,17 +424,21 @@ fun IncomeExpensesDataBox(
             }
         }
         // Дата
+        var showDatePicker by remember { mutableStateOf(false) }
         AppInputRow(
             iconRes = R.drawable.calendar,
             text = "Дата"
         ) {
-            AppDatePicker(
-                onDateChange = onDateChange,
+            TextFieldForDate(
+                onClick = {showDatePicker = !showDatePicker},
                 modifier = Modifier.weight(0.56f),
                 textFieldColors = AppTextFieldColors,
                 stateDate = state.date,
                 height = 0.7f
             )
+        }
+        if(showDatePicker){
+            AppDatePickerDialog(state.date, onDateChange) {showDatePicker = false}
         }
         // Опис
         AppInputRow(
@@ -474,7 +479,6 @@ fun TransferDataBox(
     onDateChange: (Long) -> Unit
 ){
     ContainerForDataBox {
-
         var selectedOption by remember { mutableStateOf("Option 1") }
         LaunchedEffect(Unit) {
             if(state.description.isBlank()) {
@@ -598,19 +602,22 @@ fun TransferDataBox(
                 )
             }
         }
-
         // Дата
+        var showDatePicker by remember { mutableStateOf(false) }
         AppInputRow(
             iconRes = R.drawable.calendar,
             text = "Дата"
         ) {
-            AppDatePicker(
-                onDateChange = onDateChange,
+            TextFieldForDate(
+                onClick = {showDatePicker = !showDatePicker},
                 modifier = Modifier.weight(0.56f),
                 textFieldColors = AppTextFieldColors,
                 stateDate = state.date,
                 height = 0.7f
             )
+        }
+        if(showDatePicker){
+            AppDatePickerDialog(state.date, onDateChange) {showDatePicker = false}
         }
         Line()
     }

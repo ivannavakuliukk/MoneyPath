@@ -57,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -67,7 +68,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.R
 import com.example.moneypath.data.models.BudgetPlanDB
 import com.example.moneypath.data.models.BudgetPlanRequest
@@ -236,7 +236,7 @@ fun CurrentPlan(state: PlanScreenViewModel.UiState, navController: NavController
                 ) {
                     Row(modifier = Modifier.align(Alignment.Center)) {
                         Icon(
-                            painter = rememberAsyncImagePainter(R.drawable.reload),
+                            painter = painterResource(R.drawable.reload),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp).padding(end = 3.dp)
@@ -336,7 +336,7 @@ fun CurrentPlan(state: PlanScreenViewModel.UiState, navController: NavController
                     ) {
                         Row(modifier = Modifier.align(Alignment.Center)) {
                             Icon(
-                                painter = rememberAsyncImagePainter(R.drawable.settings),
+                                painter = painterResource(R.drawable.settings),
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(18.dp).padding(end = 3.dp)
@@ -366,7 +366,7 @@ fun CurrentPlan(state: PlanScreenViewModel.UiState, navController: NavController
                     ) {
                         Row(modifier = Modifier.align(Alignment.Center)) {
                             Icon(
-                                painter = rememberAsyncImagePainter(R.drawable.delete),
+                                painter = painterResource(R.drawable.delete),
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.surface,
                                 modifier = Modifier.size(18.dp).padding(end = 3.dp)
@@ -388,7 +388,7 @@ fun CurrentPlan(state: PlanScreenViewModel.UiState, navController: NavController
                             textAlign = TextAlign.Center
                         )
                         Icon(
-                            painter = rememberAsyncImagePainter(R.drawable.chart),
+                            painter = painterResource(R.drawable.chart),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.3f),
                             modifier = Modifier.align(Alignment.Center).size(250.dp)
@@ -411,7 +411,7 @@ fun CategoryLine(iconRes: Int, name:String, amount: Double, percent: String){
         verticalAlignment = Alignment.CenterVertically
     ){
         Image(
-            painter = rememberAsyncImagePainter(iconRes),
+            painter = painterResource(iconRes),
             contentDescription = null,
             modifier = Modifier.fillMaxWidth(0.1f)
         )
@@ -549,7 +549,7 @@ fun PlansGrid(state: PlanScreenViewModel.UiState, onPlanClick: (Int)-> Unit){
                         ){
                             Row() {
                                 Image(
-                                    painter = rememberAsyncImagePainter(R.drawable.clock),
+                                    painter = painterResource(R.drawable.clock),
                                     contentDescription = null,
                                     modifier = Modifier.size(17.dp).padding(end = 4.dp)
                                 )
@@ -659,7 +659,7 @@ fun AdditionalPlanDialog(onConfirmClick: (Int) -> Unit, onCancelClick: ()-> Unit
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Image(
-                            painter = rememberAsyncImagePainter(R.drawable.clock),
+                            painter = painterResource(R.drawable.clock),
                             contentDescription = null,
                             modifier = Modifier.size(25.dp).padding(end = 4.dp)
                         )

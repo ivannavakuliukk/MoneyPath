@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.R
 import com.example.moneypath.data.models.Categories
 import com.example.moneypath.data.models.PieSlice
@@ -65,7 +64,7 @@ fun CategoryDonutChart(
     if(slices.isEmpty()){
         Box(modifier = modifier) {
             Image(
-                painter = rememberAsyncImagePainter(R.drawable.empty_chart),
+                painter = painterResource(R.drawable.empty_chart),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )

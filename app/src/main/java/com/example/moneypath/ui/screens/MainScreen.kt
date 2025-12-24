@@ -1,6 +1,5 @@
 package com.example.moneypath.ui.screens
 
-import android.app.DatePickerDialog
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -31,16 +30,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -52,18 +59,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalContext
-import coil.compose.rememberAsyncImagePainter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.R
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.TransactionType
@@ -71,10 +81,12 @@ import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.data.models.findCategoryById
+import com.example.moneypath.ui.elements.AppDatePickerDialog
 import com.example.moneypath.ui.elements.AppDialog
 import com.example.moneypath.ui.elements.BottomNavigationBar
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.PagerIndicator
+import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.ui.viewmodel.MainScreenViewModel
 import com.example.moneypath.utils.formattedDate
@@ -84,6 +96,7 @@ import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 import java.util.Calendar
 import kotlin.math.abs
 import kotlin.math.roundToInt
+
 
 /*
     Сторінка "Головна сторінка"
@@ -123,7 +136,7 @@ fun MainScreen(navController: NavController, viewModel: MainScreenViewModel = hi
                     contentAlignment = Alignment.Center
                 ){
                     Icon(
-                        painter = rememberAsyncImagePainter(R.drawable.add),
+                        painter = painterResource(R.drawable.add),
                         contentDescription = null,
                         tint = Color.Unspecified,
                         modifier = Modifier.fillMaxSize()
@@ -307,7 +320,7 @@ fun MainTopAppBar(userName: String, url: Uri?) {
             modifier = Modifier.weight(0.06f).fillMaxHeight(0.7f)
         ) {
             Image(
-                painter = rememberAsyncImagePainter(R.drawable.bell),
+                painter = painterResource(R.drawable.bell),
                 contentDescription = null,
             )
         }
@@ -368,7 +381,7 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
         ) {
             Spacer(modifier = Modifier.fillMaxWidth(0.055f))
             Icon(
-                painter = rememberAsyncImagePainter(R.drawable.white_wallet),
+                painter = painterResource(R.drawable.white_wallet),
                 contentDescription = null,
                 modifier = Modifier.fillMaxHeight(),
                 tint = MaterialTheme.colorScheme.primary
@@ -479,12 +492,12 @@ fun WalletCard(wallet: Wallet, onClick: () -> Unit) {
             Image(
                 painter =
                 if(wallet.source == WalletSource.Api){
-                    rememberAsyncImagePainter(R.drawable.mono)
+                    painterResource(R.drawable.mono)
                 }else {
                     if (wallet.type == WalletType.Cash)
-                        rememberAsyncImagePainter(R.drawable.cash)
+                        painterResource(R.drawable.cash)
                     else
-                        rememberAsyncImagePainter(R.drawable.card)
+                        painterResource(R.drawable.card)
                 },
                 contentDescription = null,
                 modifier = Modifier.fillMaxWidth(0.23f).padding(bottom = 2.dp)
@@ -529,7 +542,7 @@ fun AddWalletCard(onClick: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.plus),
+                    painter = painterResource(R.drawable.plus),
                     contentDescription = null,
                     modifier = Modifier.fillMaxWidth(0.23f)
                 )
@@ -548,6 +561,7 @@ fun AddWalletCard(onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionBox(
     state: MainScreenViewModel.UiState,
@@ -572,61 +586,43 @@ fun TransactionBox(
             .padding(horizontal = ScreenSize.width * 0.035f)
             .padding(top = 0.dp, bottom = ScreenSize.width * 0.05f)
     ){
+        var showDatePicker by remember { mutableStateOf(false) }
         Row(
             modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.075f).padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
-        ) {
+        ){
             Text(
                 text= "Список транзакцій",
                 style = MaterialTheme.typography.headlineSmall,
             )
-                val context = LocalContext.current
-                val calendar = Calendar.getInstance().apply {
-                    timeInMillis = state.date * 1000
-                }
-                val todayDate = Calendar.getInstance()
-                val maxDateMillis = todayDate.timeInMillis
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentWidth()
-                        .clickable {
-                            DatePickerDialog(
-                                context,
-                                { _, year, month, dayOfMonth ->
-                                    val selectedCal = Calendar.getInstance()
-                                    selectedCal.set(year, month, dayOfMonth)
-                                    onDateChange(selectedCal.timeInMillis / 1000)
-                                },
-                                calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH),
-                                calendar.get(Calendar.DAY_OF_MONTH),
-                            ).apply {
-                                datePicker.maxDate = maxDateMillis
-                                setTitle(null)
-                            }.show()
-                        },
-                    contentAlignment = Alignment.BottomEnd
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .wrapContentWidth()
+                    .clickable { showDatePicker = !showDatePicker },
+                contentAlignment = Alignment.BottomEnd
+            ){
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ){
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(
-                            text = formattedDate(state.date),
-                            style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.secondary)
-                        )
-                        Icon(
-                            painter = rememberAsyncImagePainter(R.drawable.calendar),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.fillMaxHeight(0.6f).padding(start = 5.dp)
-                        )
-
-                    }
+                    Text(
+                        text = formattedDate(state.date),
+                        style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.secondary)
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.calendar),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.fillMaxHeight(0.6f).padding(start = 5.dp)
+                    )
                 }
+                if(showDatePicker) {
+                    AppDatePickerDialog(state.date, onDateChange) {showDatePicker = false}
+                }
+            }
         }
+
         if(state.transactions.isEmpty()) {Line()}
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
@@ -699,7 +695,7 @@ fun TransactionRow(
         verticalAlignment = Alignment.CenterVertically
     ){
         Image(
-                painter = rememberAsyncImagePainter(selectedCategory.iconRes),
+                painter = painterResource(selectedCategory.iconRes),
                 contentDescription = null,
                 modifier = Modifier.fillMaxWidth(0.13f)
         )
@@ -847,3 +843,8 @@ fun GoalBox(state: MainScreenViewModel.UiState){
         }
     }
 }
+
+
+
+
+

@@ -125,9 +125,14 @@ fun calculateMonthsAndDaysBetween(startMillis: Long, endMillis: Long): TimeDiff 
 }
 
 // Функція для визначення дати початку та кінця місяця
-fun getCurrentMonthBounds(): Pair<Long, Long> {
-    val calendar = Calendar.getInstance()
-
+fun getMonthBounds(date: Long = 0L): Pair<Long, Long> {
+    val calendar = if(date == 0L) {
+        Calendar.getInstance()
+    }else{
+        Calendar.getInstance().apply {
+            timeInMillis = date
+        }
+    }
     // Початок місяця
     calendar.set(Calendar.DAY_OF_MONTH, 1)
     calendar.set(Calendar.HOUR_OF_DAY, 0)

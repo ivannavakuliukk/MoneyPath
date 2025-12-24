@@ -12,7 +12,7 @@ interface BackendService {
     @POST("min_months")
     suspend fun getMinMonths(@Body request: MinMonthsRequest): MinMonthsResponse
 
-    @POST("optimize_goal")
+    @POST("optimizer_goal")
     suspend fun getPlanWithGoal(@Body request: BudgetPlanRequest): BudgetPlanResponse
 
     @POST("optimize_simple")
