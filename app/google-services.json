@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "173530012245",
+    "firebase_url": "https://moneypath-1d17c-default-rtdb.firebaseio.com",
+    "project_id": "moneypath-1d17c",
+    "storage_bucket": "moneypath-1d17c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173530012245:android:c6216e5690c04f9dded2dc",
+        "android_client_info": {
+          "package_name": "com.example.moneypath"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "173530012245-08jc2gfdp6r6rng4qe7q8ja7qauunb96.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.moneypath",
+            "certificate_hash": "db5ebd4814aaba125b14814c3029c7e7433d6d94"
+          }
+        },
+        {
+          "client_id": "173530012245-f0lo9ug71podkdocmnbiefd3pk1d6029.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAysGc5xR_NhRFWEQ1cj0RtieoEpG3KSQ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "173530012245-f0lo9ug71podkdocmnbiefd3pk1d6029.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
