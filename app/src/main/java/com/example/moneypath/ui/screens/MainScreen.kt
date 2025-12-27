@@ -1,7 +1,6 @@
 package com.example.moneypath.ui.screens
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,24 +29,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -59,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -70,7 +59,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
@@ -83,12 +71,15 @@ import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.data.models.findCategoryById
 import com.example.moneypath.ui.elements.AppDatePickerDialog
 import com.example.moneypath.ui.elements.AppDialog
-import com.example.moneypath.ui.elements.BottomNavigationBar
+import com.example.moneypath.ui.elements.AppSnackBar
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.PagerIndicator
+import com.example.moneypath.ui.elements.StatelessBottomBar
+import com.example.moneypath.ui.elements.StatelessNavigationDrawer
+import com.example.moneypath.ui.elements.StatelessNavigationRail
 import com.example.moneypath.ui.theme.MoneyPathTheme
-import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.ui.viewmodel.MainScreenViewModel
+import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.utils.formattedDate
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType
 import com.gigamole.composeshadowsplus.common.shadowsPlus
@@ -108,33 +99,49 @@ import kotlin.math.roundToInt
 fun MainScreen(navController: NavController, viewModel: MainScreenViewModel = hiltViewModel()) {
     val state = viewModel.uiState
     val snackBarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(state.error) {
-        state.error?.let {
-            snackBarHostState.showSnackbar(it)
-            viewModel.clearError()
-        }
-    }
-    var showGoalReachedDialog by remember{ mutableStateOf(false) }
-    var showTermReachedDialog by remember { mutableStateOf(false) }
-    var showTermGoalReachedDialog by remember { mutableStateOf(false) }
+
+    MainScreenStateless(
+        modifier = Modifier,
+        state, snackBarHostState,
+        clearError = {viewModel.clearError()}, onErrorChange = {viewModel.onErrorChange(it)},
+        onAddTransactionClick = {navController.navigate("addtransaction/${state.date}/${state.isGoal}")},
+        onTransactionClick = {navController.navigate(("transactioninfo/$it"))},
+        onDateChange = {viewModel.onDateChange(it)},
+        onWalletClick = { navController.navigate("editwallet/$it")},
+        onWalletAddClick = { navController.navigate("addwallet") }
+    )
+}
+
+@Composable
+fun MainScreenStateless(modifier: Modifier = Modifier,
+                        state: MainScreenViewModel.UiState, snackBarHostState: SnackbarHostState,
+                        clearError: ()->Unit = {}, onErrorChange: (String?) -> Unit = {},
+                        onAddTransactionClick: ()-> Unit = {}, onWalletClick: (String)-> Unit = {},
+                        onWalletAddClick: ()-> Unit = {}, onDateChange: (Long) -> Unit = {},
+                        onTransactionClick: (String) -> Unit = {}){
     SoftLayerShadowContainer {
         Scaffold(
-            bottomBar = {BottomNavigationBar(navController)},
-            topBar = {MainTopAppBar(state.userName, state.userPhotoUrl)},
+            modifier = modifier,
+            topBar = { MainTopAppBar(state.userName, state.userPhotoUrl) },
+            snackbarHost = {
+                SnackbarHost(hostState = snackBarHostState, snackbar = { data ->
+                    AppSnackBar(data)
+                })
+            },
             floatingActionButton = {
                 Box(
                     modifier = Modifier
-                        .clickable{
-                        if(state.wallets.isEmpty()){
-                            viewModel.onErrorChange("Щоб додати транзакцію, додайте хоча б один гаманець")
+                        .clickable {
+                            if (state.wallets.isEmpty()) {
+                                onErrorChange("Щоб додати транзакцію, додайте хоча б один гаманець")
+                            } else {
+                                onAddTransactionClick()
+                            }
                         }
-                        else{
-                            navController.navigate("addtransaction/${state.date}/${state.isGoal}")
-                        } }
-                        .height(ScreenSize.height*0.085f).width(ScreenSize.height*0.085f)
-                    ,
+                        .height(ScreenSize.height * 0.085f)
+                        .width(ScreenSize.height * 0.085f),
                     contentAlignment = Alignment.Center
-                ){
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.add),
                         contentDescription = null,
@@ -142,18 +149,9 @@ fun MainScreen(navController: NavController, viewModel: MainScreenViewModel = hi
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-            },
-            floatingActionButtonPosition = FabPosition.End,
-            snackbarHost = {
-                SnackbarHost(hostState = snackBarHostState, snackbar = { data ->
-                    Snackbar(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                        contentColor = Color.White,
-                        snackbarData = data
-                    )
-                })
-            }
-        ) { innerPadding ->
+            }, floatingActionButtonPosition = FabPosition.End
+        )
+        { innerPadding->
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,105 +160,25 @@ fun MainScreen(navController: NavController, viewModel: MainScreenViewModel = hi
                     .padding(innerPadding)
             ) {
                 item {
-                    WalletsLazyRowWithIndicator(wallets = state.wallets, navController, state.isWalletsLoading) {
-                        viewModel.onErrorChange(it)
+                    WalletsLazyRowWithIndicator(wallets = state.wallets, {onWalletClick(it)}, onWalletAddClick, state.isWalletsLoading) {
+                        onErrorChange(it)
                     }
                 }
                 item {
                     if(state.isGoal && state.goalTransactionsAmount!=null){
-                        GoalBox(state)
+                        GoalBox(state.goalName, state.goalTransactionsAmount, state.goalAmount)
                     }
                 }
                 item {
-                    TransactionBox(state, navController) {viewModel.onDateChange(it) }
+                    TransactionBox(state.date, state.transactions,state.isTransactionLoading, {onTransactionClick(it)},
+                        {onDateChange(it)}, state.wallets)
                 }
             }
-            // Ціль досягнуто, термін не пройшов
-            LaunchedEffect(state.goalTransactionsAmount) {
-                Log.d("DEBUG_GOAL", "isContinued=${state.isContinued}")
-                Log.d("DEBUG_GOAL", "goalAmount=${state.goalAmount}, goalTransactionsAmount=${state.goalTransactionsAmount}, planEnd=${state.planEnd}")
-                Log.d("DEBUG_GOAL", "currentTime=${Calendar.getInstance().timeInMillis}")
-                if(!state.isContinued) {
-                    if (state.goalAmount != null && state.goalTransactionsAmount != null && state.planEnd != null) {
-                        if (abs( state.goalTransactionsAmount) >= state.goalAmount && state.planEnd > Calendar.getInstance().timeInMillis) {
-                            showGoalReachedDialog = true
-                        }
-                    }
+            LaunchedEffect(state.error) {
+                state.error?.let {
+                    snackBarHostState.showSnackbar(it)
+                    clearError()
                 }
-            }
-            if(showGoalReachedDialog){
-                AppDialog(
-                    imageRes = R.drawable.happy_bunny,
-                    title = "Вітаємо!!",
-                    message = "Ви виконали поставлену ціль, хоч час ще залишився!\n Хочете створити новий план чи залишитись на поточному?",
-                    confirmText = "Поточний",
-                    onConfirm = {viewModel.setContinued()
-                                showGoalReachedDialog = false},
-                    dismissText = "Новий план",
-                    onDismiss = {
-                        viewModel.deletePlan()
-                        navController.navigate("form"){
-                            popUpTo(0){inclusive = true}
-                        }
-                    },
-                    cancelable = false
-                )
-            }
-            LaunchedEffect(state.goalTransactionsAmount) {
-                Log.d("DEBUG_GOAL", "isContinued=${state.isContinued}")
-                Log.d("DEBUG_GOAL", "goalAmount=${state.goalAmount}, goalTransactionsAmount=${state.goalTransactionsAmount}, planEnd=${state.planEnd}")
-                Log.d("DEBUG_GOAL", "currentTime=${Calendar.getInstance().timeInMillis}")
-                if(state.goalAmount != null && state.goalTransactionsAmount != null && state.planEnd != null){
-                    if (abs( state.goalTransactionsAmount) < state.goalAmount && state.planEnd <= Calendar.getInstance().timeInMillis) {
-                        showTermReachedDialog = true
-                    }else if((abs( state.goalTransactionsAmount) >= state.goalAmount && state.planEnd <= Calendar.getInstance().timeInMillis)){
-                        showTermGoalReachedDialog = true
-                    }
-                }
-            }
-            if(showTermReachedDialog){
-                AppDialog(
-                    imageRes = R.drawable.sad_cat,
-                    title = "На жаль...",
-                    message = "Ви не виконали поставлену ціль, а час плану вже минув. Давайте створимо новий?",
-                    confirmText = "Зрозуміло",
-                    onConfirm = {
-                        viewModel.deletePlan()
-                        navController.navigate("mainscreen"){
-                            popUpTo(0){inclusive = true}
-                        }
-                    },
-                    dismissText = "Новий план",
-                    onDismiss = {
-                        viewModel.deletePlan()
-                        navController.navigate("form"){
-                            popUpTo(0){inclusive = true}
-                        }
-                    },
-                    cancelable = false
-                )
-            }
-            if(showTermGoalReachedDialog){
-                AppDialog(
-                    imageRes = R.drawable.happy_bunny,
-                    title = "Вітаємо",
-                    message = "Ви виконали поставлену ціль, та й термін вже минув. Давайте створимо новий план?",
-                    confirmText = "Зрозуміло",
-                    onConfirm = {
-                        viewModel.deletePlan()
-                        navController.navigate("mainscreen"){
-                            popUpTo(0){inclusive = true}
-                        }
-                    },
-                    dismissText = "Новий план",
-                    onDismiss = {
-                        viewModel.deletePlan()
-                        navController.navigate("form"){
-                            popUpTo(0){inclusive = true}
-                        }
-                    },
-                    cancelable = false
-                )
             }
         }
     }
@@ -271,30 +189,31 @@ fun MainScreen(navController: NavController, viewModel: MainScreenViewModel = hi
 @Composable
 fun MainTopAppBar(userName: String, url: Uri?) {
     Row(
-        modifier = Modifier.height(ScreenSize.height*0.09f).fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .wrapContentHeight()
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background).padding(10.dp)
+        ,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(modifier = Modifier.weight(0.055f))
-        if(url != null){
+        if (url != null) {
             Image(
                 painter = rememberAsyncImagePainter(url),
                 contentDescription = null,
                 modifier = Modifier
-                    .fillMaxHeight(0.7f)
                     .clip(CircleShape)
                     .aspectRatio(1f)
                     .weight(0.097f)
             )
-        }else{
+        } else {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight(0.7f)
                     .aspectRatio(1f)
+                    .weight(0.097f)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiary)
-                    .weight(0.097f),
+                    .background(MaterialTheme.colorScheme.tertiary),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -308,7 +227,8 @@ fun MainTopAppBar(userName: String, url: Uri?) {
         Column(modifier = Modifier.weight(0.758f)) {
             Text(
                 text = userName,
-                style = MaterialTheme.typography.labelSmall
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1
             )
             Text(
                 text = "Привіт!\uD83D\uDC4B Раді Вас бачити!",
@@ -317,7 +237,8 @@ fun MainTopAppBar(userName: String, url: Uri?) {
         }
         IconButton(
             onClick = {},
-            modifier = Modifier.weight(0.06f).fillMaxHeight(0.7f)
+            modifier = Modifier
+                .weight(0.06f)
         ) {
             Image(
                 painter = painterResource(R.drawable.bell),
@@ -326,19 +247,14 @@ fun MainTopAppBar(userName: String, url: Uri?) {
         }
         Spacer(modifier = Modifier.weight(0.055f))
     }
-    Spacer(
-        modifier = Modifier
-            .height(ScreenSize.height *0.017f)
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxWidth()
-    )
 
 }
 
 
 // Гаманці
 @Composable
-fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavController, isLoading: Boolean, onErrorChange:(String?) -> Unit){
+fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, onWalletClick: (id: String) -> Unit, onWalletAddClick: () -> Unit,
+                                isLoading: Boolean, onErrorChange:(String?) -> Unit){
     val listState = rememberLazyListState()
     val itemsPerPage = 2
     val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
@@ -375,7 +291,7 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
         Row(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background)
-                .height(ScreenSize.height *0.035f)
+                .height(ScreenSize.height * 0.035f)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -394,7 +310,7 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
         }
         Spacer(
             modifier = Modifier
-                .height(ScreenSize.height *0.02f)
+                .height(ScreenSize.height * 0.02f)
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxWidth()
         )
@@ -403,7 +319,7 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(ScreenSize.height *0.19f + 8.dp)
+                    .height(ScreenSize.height * 0.19f + 8.dp)
                     .background(MaterialTheme.colorScheme.background)
             ){
                 CircularProgressIndicator(
@@ -419,16 +335,17 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)
                     .wrapContentHeight()
-                    .fillMaxWidth().padding(bottom = 8.dp),
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(ScreenSize.width * 0.055f),
                 contentPadding = PaddingValues(horizontal = ScreenSize.width * 0.055f),
                 state = listState
             ) {
                 items(wallets) { wallet ->
-                    val walletId = wallet.id
                     WalletCard(wallet = wallet) {
                         if(wallet.id != "mono") {
-                            navController.navigate("editwallet/$walletId")
+                            onWalletClick(wallet.id)
+//                            navController.navigate("editwallet/$walletId")
                         }
                     }
                 }
@@ -437,11 +354,10 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
                         if(wallets.size > 5){
                             onErrorChange("Можна створити не більше трьох гаманців")
                         }
-                        else{
-                        navController.navigate("addwallet") }
+                        else{ onWalletAddClick() }
+//                        navController.navigate("addwallet") }
                     })
                 }
-
             }
             // Індикатор
             if (wallets.size > 1) {
@@ -466,8 +382,8 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, navController: NavControl
 fun WalletCard(wallet: Wallet, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .width(ScreenSize.width *0.38f)
-            .height(ScreenSize.height *0.19f)
+            .width(ScreenSize.width * 0.38f)
+            .height(ScreenSize.height * 0.19f)
             .shadowsPlus(
                 type = ShadowsPlusType.SoftLayer,
                 color = Color.Black.copy(alpha = 0.25f),
@@ -476,7 +392,7 @@ fun WalletCard(wallet: Wallet, onClick: () -> Unit) {
                 spread = 1.dp,
                 shape = RoundedCornerShape(13.dp),
                 isAlphaContentClip = true
-    ),
+            ),
         shape = RoundedCornerShape(13.dp),
         elevation = CardDefaults.cardElevation(),
         colors = CardDefaults.cardColors(
@@ -500,7 +416,9 @@ fun WalletCard(wallet: Wallet, onClick: () -> Unit) {
                         painterResource(R.drawable.card)
                 },
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth(0.23f).padding(bottom = 2.dp)
+                modifier = Modifier
+                    .fillMaxWidth(0.23f)
+                    .padding(bottom = 2.dp)
             )
             Text(
                 text = wallet.name,
@@ -520,8 +438,8 @@ fun WalletCard(wallet: Wallet, onClick: () -> Unit) {
 fun AddWalletCard(onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .width(ScreenSize.width *0.38f)
-            .height(ScreenSize.height *0.19f)
+            .width(ScreenSize.width * 0.38f)
+            .height(ScreenSize.height * 0.19f)
             .clickable { onClick() }
             .shadowsPlus(
                 type = ShadowsPlusType.SoftLayer,
@@ -530,7 +448,8 @@ fun AddWalletCard(onClick: () -> Unit) {
                 offset = DpOffset(x = 2.dp, y = 4.dp),
                 spread = 1.dp,
                 shape = RoundedCornerShape(13.dp),
-                isAlphaContentClip = true),
+                isAlphaContentClip = true
+            ),
         shape = RoundedCornerShape(13.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)),
         elevation = CardDefaults.cardElevation()
@@ -561,12 +480,14 @@ fun AddWalletCard(onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionBox(
-    state: MainScreenViewModel.UiState,
-    navController: NavController,
+    date: Long,
+    transactions: List<Transaction>,
+    isTransactionLoading: Boolean,
+    onTransactionClick: (String)-> Unit,
     onDateChange: (Long) -> Unit,
+    wallets: List<Wallet>
 ){
     Column(
         modifier = Modifier
@@ -588,7 +509,10 @@ fun TransactionBox(
     ){
         var showDatePicker by remember { mutableStateOf(false) }
         Row(
-            modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.075f).padding(bottom = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ScreenSize.height * 0.075f)
+                .padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
         ){
@@ -607,31 +531,36 @@ fun TransactionBox(
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     Text(
-                        text = formattedDate(state.date),
+                        text = formattedDate(date),
                         style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.secondary)
                     )
                     Icon(
                         painter = painterResource(R.drawable.calendar),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.fillMaxHeight(0.6f).padding(start = 5.dp)
+                        modifier = Modifier
+                            .fillMaxHeight(0.6f)
+                            .padding(start = 5.dp)
                     )
                 }
                 if(showDatePicker) {
-                    AppDatePickerDialog(state.date, onDateChange) {showDatePicker = false}
+                    AppDatePickerDialog(date, onDateChange) {showDatePicker = false}
                 }
             }
         }
 
-        if(state.transactions.isEmpty()) {Line()}
+        if(transactions.isEmpty()) {Line()}
         LazyColumn(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .heightIn(max = 7000.dp, min = ScreenSize.height * 0.11f),
             userScrollEnabled = false
         ) {
-            if(state.isTransactionLoading){
+            if(isTransactionLoading){
                 item {
-                    Box(modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.11f),
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ScreenSize.height * 0.11f),
                         contentAlignment = Alignment.BottomCenter) {
                         LinearProgressIndicator(
                             color = MaterialTheme.colorScheme.background,
@@ -643,10 +572,12 @@ fun TransactionBox(
                     }
                 }
             }else {
-                if (state.transactions.isEmpty()) {
+                if (transactions.isEmpty()) {
                     item {
                         Box(
-                            modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.11f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(ScreenSize.height * 0.11f),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -659,12 +590,15 @@ fun TransactionBox(
                         }
                     }
                 } else {
-                    items(state.transactions) { transaction ->
+                    items(transactions) { transaction ->
                         val transactionId = transaction.id
                         TransactionRow(
                             transaction,
-                            wallets = state.wallets
-                        ) { navController.navigate("transactioninfo/$transactionId") }
+                            wallets = wallets
+                        ) {
+                            onTransactionClick(transactionId)
+//                            navController.navigate("transactioninfo/$transactionId")
+                        }
                     }
                 }
             }
@@ -687,7 +621,7 @@ fun TransactionRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(ScreenSize.height * 0.11f)
-            .clickable{
+            .clickable {
                 onClick()
             }
         ,
@@ -700,7 +634,9 @@ fun TransactionRow(
                 modifier = Modifier.fillMaxWidth(0.13f)
         )
         Column(
-            modifier = Modifier.weight(0.65f).padding(horizontal = 6.dp)
+            modifier = Modifier
+                .weight(0.65f)
+                .padding(horizontal = 6.dp)
         ){
             Text(
                 text = selectedCategory.name +
@@ -748,7 +684,7 @@ fun TransactionRow(
 }
 
 @Composable
-fun GoalBox(state: MainScreenViewModel.UiState){
+fun GoalBox(goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?){
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -787,20 +723,24 @@ fun GoalBox(state: MainScreenViewModel.UiState){
 
         ){
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(top = 5.dp)) {
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 5.dp)) {
                 Text(
-                    text = "Ціль – \"${state.goalName}\"",
-                            style = MaterialTheme.typography.labelSmall
+                    text = "Ціль – \"${goalName}\"",
+                    style = MaterialTheme.typography.labelSmall
                 )
                 Text(
-                    text = "${state.goalTransactionsAmount?.toInt()?.let { abs(it) }} з ${state.goalAmount} грн.",
+                    text = "${goalTransactionsAmount?.toInt()?.let { abs(it) }} з $goalAmount грн.",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-                val planAmount = state.goalAmount
-                val amount = state.goalTransactionsAmount?.let { abs(it) }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 5.dp)) {
+                val planAmount = goalAmount
+                val amount = goalTransactionsAmount?.let { abs(it) }
                 var progress: Float = 0F
                 var color = MaterialTheme.colorScheme.background
                 if (amount != null) {
@@ -844,7 +784,189 @@ fun GoalBox(state: MainScreenViewModel.UiState){
     }
 }
 
+@Composable
+fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
+                   goalAmount: Int?, planEnd: Long?, onContinued: ()-> Unit,
+                   onDelete: ()-> Unit){
+    // Обробка випадків - термін минув, або ціль досягнуто
+    var showGoalReachedDialog by remember{ mutableStateOf(false) }
+    var showTermReachedDialog by remember { mutableStateOf(false) }
+    var showTermGoalReachedDialog by remember { mutableStateOf(false) }
+    // Ціль досягнуто, термін не пройшов
+    LaunchedEffect(goalTransactionsAmount) {
+        if(!isContinued) {
+            if (goalAmount != null && goalTransactionsAmount != null && planEnd != null) {
+                if (abs(goalTransactionsAmount) >= goalAmount && planEnd > Calendar.getInstance().timeInMillis) {
+                    showGoalReachedDialog = true
+                }
+            }
+        }
+    }
+    if(showGoalReachedDialog){
+        AppDialog(
+            imageRes = R.drawable.happy_bunny,
+            title = "Вітаємо!!",
+            message = "Ви виконали поставлену ціль, хоч час ще залишився!\n Хочете створити новий план чи залишитись на поточному?",
+            confirmText = "Поточний",
+            onConfirm = {
+//                viewModel.setContinued()
+//                showGoalReachedDialog = false
+                onContinued()
+                        },
+            dismissText = "Новий план",
+            onDismiss = {
+//                viewModel.deletePlan()
+//                navController.navigate("form"){
+//                    popUpTo(0){inclusive = true}
+//                }
+                onDelete()
+            },
+            cancelable = false
+        )
+    }
+    LaunchedEffect(goalTransactionsAmount) {
+        if(goalAmount != null && goalTransactionsAmount != null && planEnd != null){
+            if (abs( goalTransactionsAmount) < goalAmount && planEnd <= Calendar.getInstance().timeInMillis) {
+                showTermReachedDialog = true
+            }else if((abs( goalTransactionsAmount) >=goalAmount && planEnd <= Calendar.getInstance().timeInMillis)){
+                showTermGoalReachedDialog = true
+            }
+        }
+    }
+    if(showTermReachedDialog){
+        AppDialog(
+            imageRes = R.drawable.sad_cat,
+            title = "На жаль...",
+            message = "Ви не виконали поставлену ціль, а час плану вже минув. Давайте створимо новий?",
+            confirmText = "Зрозуміло",
+            onConfirm = {
+//                viewModel.deletePlan()
+//                navController.navigate("mainscreen"){
+//                    popUpTo(0){inclusive = true}
+//                }
+                onDelete()
+            },
+            dismissText = "Новий план",
+            onDismiss = {
+//                viewModel.deletePlan()
+//                navController.navigate("form"){
+//                    popUpTo(0){inclusive = true}
+//                }
+                onDelete()
+            },
+            cancelable = false
+        )
+    }
+    if(showTermGoalReachedDialog){
+        AppDialog(
+            imageRes = R.drawable.happy_bunny,
+            title = "Вітаємо",
+            message = "Ви виконали поставлену ціль, та й термін вже минув. Давайте створимо новий план?",
+            confirmText = "Зрозуміло",
+            onConfirm = {
+//                viewModel.deletePlan()
+//                navController.navigate("mainscreen"){
+//                    popUpTo(0){inclusive = true}
+//                }
+                onDelete()
+            },
+            dismissText = "Новий план",
+            onDismiss = {
+//                viewModel.deletePlan()
+//                navController.navigate("form"){
+//                    popUpTo(0){inclusive = true}
+//                }
+                onDelete()
+            },
+            cancelable = false
+        )
+    }
+}
 
 
+fun previewUiStateExample(): MainScreenViewModel.UiState {
+    val transactions = listOf(
+        Transaction(
+            id = "1",
+            date = 1766851200,
+            amount = 100.0,
+            type = TransactionType.Expense,
+            categoryId = "food",
+            walletId = "1"
+        )
+    )
+    val wallets = listOf(
+        Wallet(
+            id = "1",
+            name = "Cash",
+            type = WalletType.Cash,
+            balance = 1000.0
+        )
+    )
+    return MainScreenViewModel.UiState(
+        wallets = wallets,
+        transactions = transactions
+    )
+}
 
 
+@Preview(showSystemUi = true, showBackground = true)
+@Composable
+private fun MainScreenCompact() {
+    val state = previewUiStateExample()
+    MoneyPathTheme {
+        Scaffold(Modifier.fillMaxSize(),
+            bottomBar = { StatelessBottomBar("mainscreen") { } }
+        ) {innerPadding->
+            Spacer(Modifier.padding(innerPadding))
+            MainScreenStateless(
+                state = state,
+                snackBarHostState = remember { SnackbarHostState() }
+            ) { }
+        }
+    }
+}
+
+@Preview(showSystemUi = true, showBackground = true,
+    device = "spec:width=1280dp,height=800dp,dpi=240,orientation=portrait"
+)
+@Composable
+private fun MainScreenMedium() {
+    val state = previewUiStateExample()
+    MoneyPathTheme {
+        Scaffold(Modifier.fillMaxSize()
+        ) {innerPadding->
+            Row(Modifier.fillMaxSize()) {
+                Spacer(Modifier.padding(innerPadding))
+                StatelessNavigationRail("mainscreen") { }
+                MainScreenStateless(
+                    state = state,
+                    snackBarHostState = remember { SnackbarHostState() }
+                ) { }
+            }
+        }
+    }
+}
+
+@Preview(showSystemUi = true, showBackground = true,
+    device = "spec:width=1280dp,height=800dp,dpi=240"
+)
+@Composable
+private fun MainScreenExpanded() {
+    val state = previewUiStateExample()
+        MoneyPathTheme {
+            Scaffold(
+                Modifier.fillMaxSize()
+            ) { innerPadding ->
+                Row(Modifier.fillMaxSize()) {
+                    Spacer(Modifier.padding(innerPadding))
+                    StatelessNavigationDrawer(modifier = Modifier.weight(0.25f), "mainscreen") { }
+                    MainScreenStateless(
+                        modifier = Modifier.weight(0.75f),
+                        state = state,
+                        snackBarHostState = remember { SnackbarHostState() }
+                    ) { }
+                }
+            }
+        }
+}

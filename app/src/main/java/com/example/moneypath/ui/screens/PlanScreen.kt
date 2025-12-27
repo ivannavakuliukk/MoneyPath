@@ -51,38 +51,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.moneypath.R
-import com.example.moneypath.data.models.BudgetPlanDB
-import com.example.moneypath.data.models.BudgetPlanRequest
 import com.example.moneypath.data.models.Categories
-import com.example.moneypath.data.models.SettingsDB
 import com.example.moneypath.data.models.findCategoryById
 import com.example.moneypath.ui.elements.AppAlertDialog
-import com.example.moneypath.ui.elements.BalanceDialog
-import com.example.moneypath.ui.elements.BorderedBox
 import com.example.moneypath.ui.elements.BottomNavigationBar
 import com.example.moneypath.ui.elements.CategoryHorizontalBarChart
-import com.example.moneypath.ui.elements.DiffStyleLine
-import com.example.moneypath.ui.elements.FormContainer
 import com.example.moneypath.ui.elements.Line
-import com.example.moneypath.ui.elements.MyTopAppBar
 import com.example.moneypath.ui.elements.MyTopAppBarTwoLinesNoIcon
 import com.example.moneypath.ui.elements.PagerIndicator
 import com.example.moneypath.ui.elements.PlanContainer
@@ -92,17 +75,6 @@ import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.utils.monthWordForm
 import com.example.moneypath.utils.rotateVertically
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
-import com.github.mikephil.charting.charts.HorizontalBarChart
-import com.github.mikephil.charting.components.MarkerView
-import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.data.BarData
-import com.github.mikephil.charting.data.BarDataSet
-import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.formatter.ValueFormatter
-import com.github.mikephil.charting.highlight.Highlight
-import com.github.mikephil.charting.utils.MPPointF
-import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @Composable
@@ -132,7 +104,6 @@ fun PlanScreen(navController: NavController, viewModel: PlanScreenViewModel = hi
                         totalPages = totalPages,
                         currentPage = pagerState.currentPage
                     )
-                    BottomNavigationBar(navController)
                 }},
             topBar = {
                 MyTopAppBarTwoLinesNoIcon(

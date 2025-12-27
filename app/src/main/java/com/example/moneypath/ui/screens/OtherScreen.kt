@@ -87,7 +87,6 @@ fun OtherScreen(navController: NavController, viewModel: OtherViewModel = hiltVi
     }
     SoftLayerShadowContainer {
         Scaffold(
-            bottomBar = { BottomNavigationBar(navController) },
             topBar = { MyTopAppBarNoIcon("Інше", MaterialTheme.colorScheme.background) },
             snackbarHost = {
                 SnackbarHost(hostState = snackBarHostState, snackbar = { data ->

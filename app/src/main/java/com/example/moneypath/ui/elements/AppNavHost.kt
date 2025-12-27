@@ -1,7 +1,6 @@
 package com.example.moneypath.ui.elements
 
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -17,7 +16,6 @@ import com.example.moneypath.ui.screens.FormScreen
 import com.example.moneypath.ui.screens.MainScreen
 import com.example.moneypath.ui.screens.OtherScreen
 import com.example.moneypath.ui.screens.PlanScreen
-import com.example.moneypath.ui.screens.ReportsScreen
 import com.example.moneypath.ui.screens.SecuritySetupScreen
 import com.example.moneypath.ui.screens.TransactionInfoScreen
 import com.example.moneypath.utils.slideInLeft
@@ -36,7 +34,6 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable(BottomNavItem.Home.route) { MainScreen(navController) }
         composable(BottomNavItem.Categories.route) { CategoriesScreen(navController) }
         composable(BottomNavItem.Plan.route) { PlanScreen(navController) }
-        composable(BottomNavItem.Reports.route) { ReportsScreen(navController) }
         composable(BottomNavItem.Other.route) { OtherScreen(navController) }
 
         // Інші Screens

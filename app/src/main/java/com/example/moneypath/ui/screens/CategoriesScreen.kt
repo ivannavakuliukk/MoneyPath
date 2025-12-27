@@ -101,9 +101,6 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
     }
     SoftLayerShadowContainer {
         Scaffold(
-            bottomBar = {
-                BottomNavigationBar(navController)
-            },
             topBar = {
                 if (firstVisibleIndex == 0) {
                     CategoriesTopApp(state) {startDate, endDate ->viewModel.onDateRangeSelected(startDate, endDate)}

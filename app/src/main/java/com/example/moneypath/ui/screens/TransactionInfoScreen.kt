@@ -47,7 +47,6 @@ import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBar
 import com.example.moneypath.ui.viewmodel.TransactionInfoViewModel
 import com.example.moneypath.utils.ScreenSize
-import com.example.moneypath.utils.displaySign
 import com.example.moneypath.utils.formattedDate
 import com.example.moneypath.utils.toDisplayName
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType

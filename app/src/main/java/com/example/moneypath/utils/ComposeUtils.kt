@@ -10,11 +10,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
+import androidx.window.core.layout.WindowSizeClass
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.example.moneypath.data.models.TransactionType
 
 
@@ -142,4 +146,25 @@ fun Modifier.rotateVertically(clockwise: Boolean = true): Modifier {
         }
     }
     return rotate then adjustBounds
+}
+
+@Composable
+fun adaptivePadding(): Dp {
+    val widthClass = LocalAppWindowInfo.current.windowSizeClass.windowWidthSizeClass
+    return when (widthClass) {
+        WindowWidthSizeClass.COMPACT -> 10.dp  // телефон
+        WindowWidthSizeClass.MEDIUM  -> 20.dp  // середній екран
+        WindowWidthSizeClass.EXPANDED -> 32.dp // планшет
+        else -> 10.dp
+    }
+}
+
+// Зберігаємо Metrics і SizeClass для всього додатку
+data class AppWindowInfo(
+    val windowSizeClass: WindowSizeClass
+)
+
+// CompositionLocal для доступу з будь-якого Composable
+val LocalAppWindowInfo = staticCompositionLocalOf<AppWindowInfo> {
+    error("No AppWindowInfo provided")
 }

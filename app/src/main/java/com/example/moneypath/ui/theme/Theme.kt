@@ -46,7 +46,8 @@ object Inter {
 fun rememberScaleFactor(): Float {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
-    val scale = screenWidth/360f
+    var scale = screenWidth/360f
+    scale = scale.coerceIn(1f, 2f) // мінімум 1x, максимум 1.5x
     Log.d("AdaptiveFont", "Screen width=${configuration.screenWidthDp}dp, scale=$scale")
     return scale
 }

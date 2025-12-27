@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.firebase.database)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.navigation.testing.android)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth)
@@ -105,6 +106,10 @@ dependencies {
 
     implementation (libs.reorderable)
     implementation (libs.mpandroidchart)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
+
+
+
 
 
 }

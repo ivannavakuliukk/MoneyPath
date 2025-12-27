@@ -10,6 +10,16 @@ sealed class BottomNavItem(
         data object Home : BottomNavItem("Головна", R.drawable.home, "mainscreen")
         data object Categories : BottomNavItem("Категорії", R.drawable.category, "profile")
         data object Plan: BottomNavItem("План", R.drawable.plan, "plan")
-        data object Reports: BottomNavItem("Звіти", R.drawable.report, "reports")
         data object Other: BottomNavItem("Інше", R.drawable.other, "other")
+
+    companion object {
+        val items by lazy {
+            listOf(
+                Home,
+                Categories,
+                Plan,
+                Other
+            )
+        }
+    }
 }

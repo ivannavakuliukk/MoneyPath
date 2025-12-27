@@ -1,6 +1,5 @@
 package com.example.moneypath.ui.elements
 
-import android.app.DatePickerDialog
 import android.graphics.drawable.Animatable
 import android.widget.ImageView
 import androidx.compose.foundation.Image
@@ -32,7 +31,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -49,6 +47,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldColors
@@ -830,5 +830,14 @@ fun AppDatePickerDialog(chosenDate: Long, onDateChange: (Long) -> Unit, onDismis
             )
         )
     }
+}
+
+@Composable
+fun AppSnackBar(data: SnackbarData){
+    Snackbar(
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+        contentColor = Color.White,
+        snackbarData = data
+    )
 }
 
