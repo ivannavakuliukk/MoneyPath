@@ -37,6 +37,7 @@ securityCrypto = "1.1.0"
 firebaseCrashlyticsBuildtools = "3.0.6"
 uiTestAndroid = "1.7.2"
 navigationTestingAndroid = "2.9.6"
+animation = "1.10.0"
 
 
 [libraries]
@@ -85,6 +86,7 @@ firebase-database = { group = "com.google.firebase", name = "firebase-database",
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 androidx-ui-test-android = { group = "androidx.compose.ui", name = "ui-test-android", version.ref = "uiTestAndroid" }
 androidx-navigation-testing-android = { group = "androidx.navigation", name = "navigation-testing-android", version.ref = "navigationTestingAndroid" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

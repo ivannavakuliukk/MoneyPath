@@ -1,7 +1,12 @@
 package com.example.moneypath.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,10 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -62,12 +69,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneypath.R
+import com.example.moneypath.data.models.Category
 import com.example.moneypath.data.models.TransactionType
+import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.ui.elements.AppButton
 import com.example.moneypath.ui.elements.AppDatePickerDialog
 import com.example.moneypath.ui.elements.AppInputRow
+import com.example.moneypath.ui.elements.BottomNavItem
 import com.example.moneypath.ui.elements.ContainerForDataBox
+import com.example.moneypath.ui.elements.InfiniteLinearWavyIndicator
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBar
 import com.example.moneypath.ui.elements.TextFieldForDate
@@ -85,6 +96,7 @@ import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
     di - AddTransactionViewModel
     параметри - navController
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AddTransactionScreen(navController: NavController, date: Long, isGoal:Boolean, viewModel: AddTransactionViewModel = hiltViewModel()){
     val state = viewModel.uiState
@@ -116,80 +128,97 @@ fun AddTransactionScreen(navController: NavController, date: Long, isGoal:Boolea
             navController.popBackStack()
         }
     }
-        SoftLayerShadowContainer {
-            Scaffold(
-                topBar = {
-                    MyTopAppBar(
-                        background = state.type.backgroundColor(),
-                        title = "Додати транзакцію"
-                    ) { navController.popBackStack() }
-                },
-                bottomBar = {
-                    Column {
-                        if (state.isLoading) {
-                            LinearProgressIndicator(
-                                color = MaterialTheme.colorScheme.background,
-                                trackColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp)
+    SoftLayerShadowContainer {
+        Scaffold(
+            topBar = {
+                MyTopAppBar(
+                    background = state.type.backgroundColor(),
+                    title = "Додати транзакцію"
+                ) { navController.popBackStack() }
+            },
+            bottomBar = {
+                Column {
+                    if (state.isLoading) {
+                        InfiniteLinearWavyIndicator()
+                    }
+                    Line()
+                    AppButton(
+                        onClick = {
+                            viewModel.addTransaction()
+                        },
+                        text = "Зберегти",
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier
+                            .padding(
+                                horizontal = ScreenSize.width * 0.055f,
                             )
-                        }
-                        Line()
-                        AppButton(
-                            onClick = {
-                                viewModel.addTransaction()
-                            },
-                            text = "Зберегти",
-                            color = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier
-                                .padding(
-                                    horizontal = ScreenSize.width * 0.055f,
-                                )
-                                .padding(bottom = 15.dp, top = 10.dp)
-                        )
-                    }
-                },
-                snackbarHost = {
-                    SnackbarHost(hostState = snackBarHostState, snackbar = { data ->
-                        Snackbar(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                            contentColor = Color.White,
-                            snackbarData = data
-                        )
-                    })
+                            .padding(bottom = 15.dp, top = 10.dp)
+                    )
                 }
-            ) { innerPadding ->
-                LazyColumn(
-                    Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(innerPadding)
-                ) {
-                    item {
-                        TransactionInputSection(
-                            state = state,
-                            onTypeChange = { selectedType ->
-                                viewModel.onTypeChange(selectedType)
-                            },
-                            onAmountChange = { selectedAmount ->
-                                viewModel.onAmountChange(selectedAmount)
-                            }
-                        )
-                    }
-                    item {
-                        if (state.type == TransactionType.Income || state.type == TransactionType.Expense) {
+            },
+            snackbarHost = {
+                SnackbarHost(hostState = snackBarHostState, snackbar = { data ->
+                    Snackbar(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        contentColor = Color.White,
+                        snackbarData = data
+                    )
+                })
+            }
+        ) { innerPadding ->
+            LazyColumn(
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(innerPadding)
+            ) {
+                item {
+                    TransactionInputSection(
+                        state = state,
+                        onTypeChange = { selectedType ->
+                            viewModel.onTypeChange(selectedType)
+                        },
+                        onAmountChange = { selectedAmount ->
+                            viewModel.onAmountChange(selectedAmount)
+                        }
+                    )
+                }
+                item {
+                    AnimatedContent(state.type) { targetState->
+                    when(targetState){
+                        TransactionType.Income -> {
                             IncomeExpensesDataBox(
-                                state,
+                                selectedWallet = state.walletId,
                                 onWalletIdChange = { selectedWalletId ->
                                     viewModel.onWalletIdChange(selectedWalletId)
                                 },
                                 onCategoryIdChange = { viewModel.onCategoryIdChange(it) },
                                 onDateChange = { viewModel.onDateChange(it) },
-                                onDescriptionChange = { viewModel.onDescriptionChange(it) }
+                                onDescriptionChange = { viewModel.onDescriptionChange(it) },
+                                wallets = state.wallets,
+                                selectedCategory = state.categoryId,
+                                categories = state.categories,
+                                date = state.date,
+                                description = state.description
                             )
-                        } else {
+                        }TransactionType.Expense -> {
+                            IncomeExpensesDataBox(
+                                selectedWallet = state.walletId,
+                                onWalletIdChange = { selectedWalletId ->
+                                    viewModel.onWalletIdChange(selectedWalletId)
+                                },
+                                onCategoryIdChange = { viewModel.onCategoryIdChange(it) },
+                                onDateChange = { viewModel.onDateChange(it) },
+                                onDescriptionChange = { viewModel.onDescriptionChange(it) },
+                                wallets = state.wallets,
+                                selectedCategory = state.categoryId,
+                                categories = state.categories,
+                                date = state.date,
+                                description = state.description
+                            )
+                        }
+                        TransactionType.Transfer -> {
                             TransferDataBox(
                                 state,
                                 onWalletIdChange = { viewModel.onWalletIdChange(it) },
@@ -199,12 +228,11 @@ fun AddTransactionScreen(navController: NavController, date: Long, isGoal:Boolea
                             )
                         }
                     }
-
+                    }
                 }
-
             }
-
         }
+    }
 }
 
 
@@ -336,7 +364,12 @@ fun TransactionSegmentedButton(modifier: Modifier = Modifier, selectedType: Tran
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IncomeExpensesDataBox(
-    state: AddTransactionViewModel.UiState,
+    selectedWallet: String,
+    wallets: List<Wallet>,
+    selectedCategory: String,
+    categories: List<Category>,
+    date: Long,
+    description: String,
     onWalletIdChange: (String) -> Unit,
     onCategoryIdChange: (String) -> Unit,
     onDateChange: (Long) -> Unit,
@@ -344,7 +377,7 @@ fun IncomeExpensesDataBox(
 ){
     ContainerForDataBox {
         // Гаманець
-        val selectedWallet = state.wallets.firstOrNull { it.id == state.walletId }
+        val selectedWallet = wallets.firstOrNull { it.id == selectedWallet }
         if (selectedWallet!= null){
             AppInputRow(
                 iconRes = if(selectedWallet.type == WalletType.Cash) R.drawable.cash else R.drawable.card,
@@ -374,7 +407,7 @@ fun IncomeExpensesDataBox(
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.background(MaterialTheme.colorScheme.primary)
                     ) {
-                        state.wallets.forEach { wallet ->
+                        wallets.forEach { wallet ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -388,7 +421,7 @@ fun IncomeExpensesDataBox(
                                     expanded = false
                                 },
                                 modifier = Modifier.background(
-                                    if (wallet.id == state.walletId) {
+                                    if (wallet.id == selectedWallet.id) {
                                         MaterialTheme.colorScheme.background.copy(alpha = 0.05f)
                                     } else
                                         Color.Transparent
@@ -400,7 +433,7 @@ fun IncomeExpensesDataBox(
             }
         }
         // Категорія
-        val selectedCategory = state.categories.firstOrNull { it.id == state.categoryId }
+        val selectedCategory = categories.firstOrNull { it.id == selectedCategory }
         if(selectedCategory!=null){
             AppInputRow(
                 iconRes = selectedCategory.iconRes,
@@ -430,7 +463,7 @@ fun IncomeExpensesDataBox(
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.background(MaterialTheme.colorScheme.primary)
                     ) {
-                        state.categories.forEach { category ->
+                        categories.forEach { category ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -444,7 +477,7 @@ fun IncomeExpensesDataBox(
                                     expanded = false
                                 },
                                 modifier = Modifier.background(
-                                    if (category.id == state.categoryId) {
+                                    if (category.id == selectedCategory.id) {
                                         MaterialTheme.colorScheme.background.copy(alpha = 0.05f)
                                     } else
                                         Color.Transparent
@@ -465,12 +498,12 @@ fun IncomeExpensesDataBox(
                 onClick = {showDatePicker = !showDatePicker},
                 modifier = Modifier.weight(0.56f),
                 textFieldColors = AppTextFieldColors,
-                stateDate = state.date,
+                stateDate = date,
                 height = 0.7f
             )
         }
         if(showDatePicker){
-            AppDatePickerDialog(state.date, onDateChange) {showDatePicker = false}
+            AppDatePickerDialog(date, onDateChange) {showDatePicker = false}
         }
         // Опис
         AppInputRow(
@@ -478,7 +511,7 @@ fun IncomeExpensesDataBox(
             text = "Опис"
         ) {
             OutlinedTextField(
-                value = state.description,
+                value = description,
                 onValueChange = {onDescriptionChange(it)},
                 placeholder = {
                     Text (

@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,6 +99,7 @@ fun ErrorScreen(message: String, onRetry: () -> Unit) {
 
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoadingScreen() {
     Column(
@@ -107,11 +110,11 @@ fun LoadingScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ){
-        CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+        ContainedLoadingIndicator(
+            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
+            indicatorColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .height(30.dp)
-
+                .size(55.dp)
         )
     }
 

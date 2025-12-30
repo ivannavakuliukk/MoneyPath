@@ -1,6 +1,8 @@
 package com.example.moneypath.ui.elements
 
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -28,7 +30,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
     NavHost(
         navController = navController,
         startDestination = "security",
-        modifier = modifier,
+        modifier = modifier
     ){
         // Screens нижньої панелі з bottom bar
         composable(BottomNavItem.Home.route) { MainScreen(navController) }

@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.androidx.navigation.testing.android)
+    implementation(libs.androidx.compose.animation)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth)

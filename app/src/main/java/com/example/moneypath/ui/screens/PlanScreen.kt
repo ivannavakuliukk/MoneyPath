@@ -3,6 +3,7 @@ package com.example.moneypath.ui.screens
 import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.TextView
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -37,12 +38,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
@@ -253,39 +256,41 @@ fun AppSplitButton(modifier: Modifier = Modifier, isPlanned: Boolean,
                     }
                 )
             }
-            DropdownMenu(
-                expanded = checked,
-                onDismissRequest = {checked = false},
-                offset = DpOffset(y = (-10).dp, x = 0.dp),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                val items = listOf(
-                    "Переглянути налаштування" to onSettingClick,
-                    "Переглянути додаткові плани" to onAdditionalClick,
-                    "Видалити план" to onDeleteClick
-                )
-                items.forEach { item->
-                    Column {
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    item.first,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            },
-                            colors = MenuDefaults.itemColors(
-                                textColor = Color(0xFF1444F1),
-                            ),
-                            onClick = {
-                                item.second()
-                                checked = false
-                            }
-                        )
-                        Line()
+//            AnimatedVisibility(checked) {
+                DropdownMenu(
+                    expanded = checked,
+                    onDismissRequest = { checked = false },
+                    offset = DpOffset(y = (-10).dp, x = 0.dp),
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    val items = listOf(
+                        "Переглянути налаштування" to onSettingClick,
+                        "Переглянути додаткові плани" to onAdditionalClick,
+                        "Видалити план" to onDeleteClick
+                    )
+                    items.forEach { item ->
+                        Column {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        item.first,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = Color(0xFF1444F1),
+                                ),
+                                onClick = {
+                                    item.second()
+                                    checked = false
+                                }
+                            )
+                            Line()
+                        }
                     }
-                }
 
-            }
+                }
+//            }
         }
 
     )
@@ -799,6 +804,7 @@ fun AdditionalPlanDialog(onConfirmClick: (Int) -> Unit, onCancelClick: ()-> Unit
 }
 
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoadingDataScreen() {
     Column(
@@ -809,11 +815,11 @@ fun LoadingDataScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ){
-        CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+        ContainedLoadingIndicator(
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            indicatorColor = MaterialTheme.colorScheme.secondary,
             modifier = Modifier
-                .height(30.dp)
-
+                .size(55.dp)
         )
     }
 

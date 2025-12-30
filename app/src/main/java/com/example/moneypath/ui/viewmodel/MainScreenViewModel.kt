@@ -2,6 +2,7 @@ package com.example.moneypath.ui.viewmodel
 
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +18,7 @@ import com.example.moneypath.usecase.crypto.ObserveTransactionsGoalUseCase
 import com.example.moneypath.usecase.crypto.ObserveTransactionsUseCase
 import com.example.moneypath.usecase.crypto.ObserveWalletsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -59,8 +61,8 @@ open class MainScreenViewModel @Inject constructor (
         loadUser()
         loadWallets()
         loadTransactionsByDate(System.currentTimeMillis()/1000)
-        helper.saveGoalAmount(40000)
-        helper.saveGoalName("Ноутбук")
+//        helper.saveGoalAmount(40000)
+//        helper.saveGoalName("Ноутбук")
         val goalName = helper.getGoalName()
         val goalAmount = helper.getGoalAmount()
         val isContinued = helper.getContinued()
@@ -132,18 +134,19 @@ open class MainScreenViewModel @Inject constructor (
         )
         observeTransactionsUseCase(
             date = date,
-            onUpdate = {newTransactions->
-               uiState= uiState.copy(
-                   transactions = newTransactions,
-                   isTransactionLoading = false,
-                   isTransactionSuccess = true
-               ) },
-            onError = {newError->
-               uiState= uiState.copy(
-                   error = newError,
-                   isTransactionLoading = false,
-                   isTransactionSuccess = false
-               )
+            onUpdate = { newTransactions ->
+                uiState = uiState.copy(
+                    transactions = newTransactions,
+                    isTransactionLoading = false,
+                    isTransactionSuccess = true
+                )
+            },
+            onError = { newError ->
+                uiState = uiState.copy(
+                    error = newError,
+                    isTransactionLoading = false,
+                    isTransactionSuccess = false
+                )
             }
         )
     }

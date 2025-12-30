@@ -373,29 +373,35 @@ fun AppInputRow(
 fun ContainerForDataBox(
     content: @Composable ColumnScope.() -> Unit
 ){
-    Text(
-        text = "Відомості",
-        style = MaterialTheme.typography.labelMedium,
-        modifier = Modifier.padding(start = ScreenSize.width*0.055f, bottom = 10.dp, top = 30.dp)
-    )
-    Column(
-        modifier = Modifier
-            .padding(horizontal = ScreenSize.width * 0.055f)
-            .padding(bottom = 30.dp)
-            .shadowsPlus(
-                type = ShadowsPlusType.SoftLayer,
-                color = Color.Black.copy(alpha = 0.25f),
-                radius = 4.dp,
-                offset = DpOffset(x = 2.dp, y = 2.dp),
-                spread = 1.dp,
-                shape = RoundedCornerShape(15.dp),
-                isAlphaContentClip = true
+    Column {
+        Text(
+            text = "Відомості",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(
+                start = ScreenSize.width * 0.055f,
+                bottom = 10.dp,
+                top = 30.dp
             )
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(ScreenSize.width * 0.035f)
-    ) {
-        content()
+        )
+        Column(
+            modifier = Modifier
+                .padding(horizontal = ScreenSize.width * 0.055f)
+                .padding(bottom = 30.dp)
+                .shadowsPlus(
+                    type = ShadowsPlusType.SoftLayer,
+                    color = Color.Black.copy(alpha = 0.25f),
+                    radius = 4.dp,
+                    offset = DpOffset(x = 2.dp, y = 2.dp),
+                    spread = 1.dp,
+                    shape = RoundedCornerShape(15.dp),
+                    isAlphaContentClip = true
+                )
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(ScreenSize.width * 0.035f)
+        ) {
+            content()
+        }
     }
 }
 

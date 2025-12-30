@@ -3,6 +3,14 @@ package com.example.moneypath.ui.screens
 import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
@@ -44,7 +53,10 @@ import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -82,6 +94,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.embedding.EmbeddingBounds
 import coil.compose.rememberAsyncImagePainter
 import coil.size.Dimension
 import com.example.moneypath.LocalAppWindowInfo
@@ -95,6 +108,7 @@ import com.example.moneypath.data.models.findCategoryById
 import com.example.moneypath.ui.elements.AppDatePickerDialog
 import com.example.moneypath.ui.elements.AppDialog
 import com.example.moneypath.ui.elements.AppSnackBar
+import com.example.moneypath.ui.elements.InfiniteLinearWavyIndicator
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.PagerIndicator
 import com.example.moneypath.ui.elements.StatelessBottomBar
@@ -355,6 +369,7 @@ fun MainTopAppBar(userName: String, url: Uri?, dimensions: Dimensions) {
 
 
 // Гаманці
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, onWalletClick: (id: String) -> Unit, onWalletAddClick: () -> Unit,
                                 isLoading: Boolean, onErrorChange:(String?) -> Unit){
@@ -382,22 +397,6 @@ fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, o
     ){
         WalletsTitle(dimensions)
         // Гаманці
-        if(isLoading){
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(ScreenSize.height * 0.19f + 8.dp)
-                    .background(MaterialTheme.colorScheme.background)
-            ){
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                    modifier = Modifier
-                        .height(30.dp)
-                        .align(Alignment.Center)
-                )
-            }
-        }
-        else {
             LazyRow(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)
@@ -410,18 +409,19 @@ fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, o
             ) {
                 items(wallets) { wallet ->
                     WalletCard(wallet = wallet, dimensions = dimensions) {
-                        if(wallet.id != "mono") {
+                        if (wallet.id != "mono") {
                             onWalletClick(wallet.id)
                         }
                     }
                 }
                 item {
                     AddWalletCard(onClick = {
-                        if(wallets.size > 5){
+                        if (wallets.size > 5) {
                             onErrorChange("Можна створити не більше трьох гаманців")
+                        } else {
+                            onWalletAddClick()
                         }
-                        else{ onWalletAddClick() }
-                    }, dimensions =dimensions)
+                    }, dimensions = dimensions)
                 }
             }
             // Індикатор
@@ -439,7 +439,6 @@ fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, o
                         .height(12.dp)
                 )
             }
-        }
     }
 }
 
@@ -670,7 +669,6 @@ fun TransactionBox(
         }
         TransactionTitle(dimensions,date = date) {showDatePicker = !showDatePicker}
         Line(height = dimensions.lineWidth)
-        if(transactions.isEmpty()) {Line()}
         when(dimensions.screenSize){
             "Compact" , "Medium" -> TransactionsLazyColumn(Modifier, dimensions, transactions, onTransactionClick, isTransactionLoading, wallets)
             else -> TransactionLazyGrid(Modifier, dimensions, transactions, onTransactionClick, isTransactionLoading, wallets)
@@ -792,19 +790,14 @@ fun TransactionTitle(dimensions: Dimensions,modifier: Modifier = Modifier, date:
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TransactionIndicator(modifier: Modifier = Modifier, dimensions: Dimensions) {
     Box(modifier = modifier
         .fillMaxWidth()
         .height(ScreenSize.height * 0.11f),
-        contentAlignment = Alignment.BottomCenter) {
-        LinearProgressIndicator(
-            color = MaterialTheme.colorScheme.background,
-            trackColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(dimensions.progressBarHeight)
-        )
+        contentAlignment = Alignment.TopCenter) {
+        InfiniteLinearWavyIndicator(Modifier.height(dimensions.progressBarHeight))
     }
 }
 
@@ -823,6 +816,7 @@ fun TransactionEmptyBox(modifier: Modifier = Modifier) {
             ),
             modifier = Modifier.align(Alignment.Center)
         )
+        Line(modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

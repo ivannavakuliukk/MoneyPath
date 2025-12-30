@@ -88,7 +88,31 @@ class MainActivity : ComponentActivity() {
 
                     val sizeClass = LocalAppWindowInfo.current.windowSizeClass
                     when  {
-                        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) -> {
+                        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) -> {
+                            Scaffold(
+                                Modifier.fillMaxSize()
+                            ) { innerPadding ->
+                                Row(Modifier.fillMaxSize()) {
+                                    if (currentRoute in navDestinations) {
+                                        AppNavigationDrawer(
+                                            modifier = Modifier.weight(0.25f),
+                                            navController = navController
+                                        )
+                                        Box(
+                                            modifier = Modifier.fillMaxHeight().width(1.5.dp)
+                                                .background(MaterialTheme.colorScheme.background)
+                                        )
+                                        AppNavHost(
+                                            navController,
+                                            modifier = Modifier.weight(0.75f)
+                                        )
+                                    } else {
+                                        AppNavHost(navController)
+                                        Spacer(modifier = Modifier.padding(innerPadding))
+                                    }
+                                }
+                            }
+                        }sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) -> {
                             Scaffold(Modifier.fillMaxSize()
                             ) {innerPadding->
                                 Row(Modifier.fillMaxSize()) {
@@ -98,25 +122,6 @@ class MainActivity : ComponentActivity() {
                                         Box(modifier = Modifier.width(1.5.dp).fillMaxHeight())
                                     }
                                     AppNavHost(navController,)
-                                }
-                            }
-                        }
-                        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) -> {
-                            Scaffold(
-                                Modifier.fillMaxSize()
-                            ) { innerPadding ->
-                                Row(Modifier.fillMaxSize()) {
-                                    if(currentRoute in navDestinations){
-                                        AppNavigationDrawer(modifier = Modifier.weight(0.25f), navController =  navController )
-                                        Box(modifier = Modifier.fillMaxHeight().width(1.5.dp).background(MaterialTheme.colorScheme.background))
-                                        AppNavHost(
-                                            navController,
-                                            modifier = Modifier.weight(0.75f)
-                                        )
-                                    }else{
-                                        AppNavHost(navController)
-                                        Spacer(modifier = Modifier.padding(innerPadding))
-                                    }
                                 }
                             }
                         }else ->{
