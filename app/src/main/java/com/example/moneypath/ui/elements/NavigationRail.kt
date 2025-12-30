@@ -71,7 +71,7 @@ fun StatelessNavigationRail(currentRoute: String?, onClick: (String)-> Unit){
                         Icon(
                             painterResource(id = item.icon),
                             contentDescription = null,
-                            modifier = Modifier.size(35.dp),
+                            modifier = Modifier.size(38.dp),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -85,12 +85,12 @@ fun StatelessNavigationRail(currentRoute: String?, onClick: (String)-> Unit){
                 label = {
                     Text(
                         text = item.title,
-                        style = MaterialTheme.typography.displaySmall,
+                        style = MaterialTheme.typography.displayLarge,
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 },
-                modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp)
+                modifier = Modifier.padding(vertical = 7.dp, horizontal = 15.dp)
             )
         }
     }

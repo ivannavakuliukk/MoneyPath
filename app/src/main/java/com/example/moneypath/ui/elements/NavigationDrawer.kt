@@ -31,13 +31,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.moneypath.ui.theme.MoneyPathTheme
 
 @Composable
-fun AppNavigationDrawer(navController: NavController){
+fun AppNavigationDrawer(navController: NavController, modifier: Modifier = Modifier){
     // Визначення поточного маршруту, щоб підствічувати активну кнопку
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     // stateless функція
     StatelessNavigationDrawer (
-        Modifier,
+        modifier,
         currentRoute
     ) { route ->
         if (currentRoute != route) {
@@ -61,7 +61,7 @@ fun StatelessNavigationDrawer(modifier: Modifier = Modifier, currentRoute: Strin
                 Column(Modifier.padding(horizontal = 10.dp)) {
                     BottomNavItem.items.forEach { item ->
                         NavigationDrawerItem(
-                            label = { Text(item.title, style = MaterialTheme.typography.displayMedium)},
+                            label = { Text(item.title, style = MaterialTheme.typography.displayLarge)},
                             selected = currentRoute == item.route,
                             onClick = { onClick(item.route) },
                             icon = {

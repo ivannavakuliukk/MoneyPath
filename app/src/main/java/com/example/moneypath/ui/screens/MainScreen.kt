@@ -1,6 +1,8 @@
 package com.example.moneypath.ui.screens
 
+import android.annotation.SuppressLint
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,11 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,7 +36,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -38,6 +49,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -53,15 +67,24 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.motionEventSpy
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.window.core.layout.WindowSizeClass
+import androidx.window.core.layout.WindowWidthSizeClass
 import coil.compose.rememberAsyncImagePainter
+import coil.size.Dimension
+import com.example.moneypath.LocalAppWindowInfo
 import com.example.moneypath.R
 import com.example.moneypath.data.models.Transaction
 import com.example.moneypath.data.models.TransactionType
@@ -79,6 +102,7 @@ import com.example.moneypath.ui.elements.StatelessNavigationDrawer
 import com.example.moneypath.ui.elements.StatelessNavigationRail
 import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.ui.viewmodel.MainScreenViewModel
+import com.example.moneypath.utils.Dimensions
 import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.utils.formattedDate
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType
@@ -86,7 +110,9 @@ import com.gigamole.composeshadowsplus.common.shadowsPlus
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 import java.util.Calendar
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.roundToInt
+
 
 
 /*
@@ -108,50 +134,72 @@ fun MainScreen(navController: NavController, viewModel: MainScreenViewModel = hi
         onTransactionClick = {navController.navigate(("transactioninfo/$it"))},
         onDateChange = {viewModel.onDateChange(it)},
         onWalletClick = { navController.navigate("editwallet/$it")},
-        onWalletAddClick = { navController.navigate("addwallet") }
+        onWalletAddClick = { navController.navigate("addwallet") },
+        onMonoAdd = {navController.navigate("other")}
     )
 }
 
+
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun MainScreenStateless(modifier: Modifier = Modifier,
-                        state: MainScreenViewModel.UiState, snackBarHostState: SnackbarHostState,
-                        clearError: ()->Unit = {}, onErrorChange: (String?) -> Unit = {},
-                        onAddTransactionClick: ()-> Unit = {}, onWalletClick: (String)-> Unit = {},
-                        onWalletAddClick: ()-> Unit = {}, onDateChange: (Long) -> Unit = {},
-                        onTransactionClick: (String) -> Unit = {}){
+fun MainScreenStateless(
+    modifier: Modifier = Modifier,
+    state: MainScreenViewModel.UiState,
+    snackBarHostState: SnackbarHostState,
+    clearError: ()->Unit = {},
+    onErrorChange: (String?) -> Unit = {},
+    onAddTransactionClick: ()-> Unit = {},
+    onWalletClick: (String)-> Unit = {},
+    onWalletAddClick: ()-> Unit = {},
+    onDateChange: (Long) -> Unit = {},
+    onTransactionClick: (String) -> Unit = {},
+    onMonoAdd: ()-> Unit)
+{
+    // розміри елементів, які залежать від екрану
+    val sizeClass = LocalAppWindowInfo.current.windowSizeClass
+    val dimensions = when {
+        // Expanded
+        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) ->
+            Dimensions(
+                cardHeight = 120.dp, cardWeight = 350.dp,
+                screenSize = "Expanded", cornerRadius = 23.dp,
+                verticalPadding = 25.dp, iconSize = 50.dp,
+                horizontalPadding = 30.dp, pagerSize = 15.dp,
+                progressBarHeight = 10.dp, lineWidth = 1.8.dp, buttonSize = 70.dp
+            )
+        // Medium
+        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) ->
+            Dimensions(
+                cardHeight = 220.dp, cardWeight = 220.dp,
+                screenSize = "Medium", cornerRadius = 20.dp,
+                verticalPadding = 25.dp, iconSize = 50.dp,
+                horizontalPadding = 30.dp, pagerSize = 15.dp,
+                lineWidth = 1.8.dp, buttonSize = 70.dp
+            )
+        // Compact
+        else ->
+            Dimensions()
+    }
+
+    // Контент
     SoftLayerShadowContainer {
         Scaffold(
             modifier = modifier,
-            topBar = { MainTopAppBar(state.userName, state.userPhotoUrl) },
+            topBar = { MainTopAppBar(state.userName, state.userPhotoUrl, dimensions) },
             snackbarHost = {
                 SnackbarHost(hostState = snackBarHostState, snackbar = { data ->
                     AppSnackBar(data)
                 })
             },
             floatingActionButton = {
-                Box(
-                    modifier = Modifier
-                        .clickable {
-                            if (state.wallets.isEmpty()) {
-                                onErrorChange("Щоб додати транзакцію, додайте хоча б один гаманець")
-                            } else {
-                                onAddTransactionClick()
-                            }
-                        }
-                        .height(ScreenSize.height * 0.085f)
-                        .width(ScreenSize.height * 0.085f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.add),
-                        contentDescription = null,
-                        tint = Color.Unspecified,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                AppFabMenu(dimensions=dimensions,
+                    onAddWalletClick =  onWalletAddClick, onAddTransactionClick = onAddTransactionClick,
+                    onAddMonoClick = onMonoAdd)
+
             }, floatingActionButtonPosition = FabPosition.End
         )
-        { innerPadding->
+        {innerPadding->
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,17 +208,17 @@ fun MainScreenStateless(modifier: Modifier = Modifier,
                     .padding(innerPadding)
             ) {
                 item {
-                    WalletsLazyRowWithIndicator(wallets = state.wallets, {onWalletClick(it)}, onWalletAddClick, state.isWalletsLoading) {
+                    WalletsLazyRowWithIndicator(dimensions, wallets = state.wallets, {onWalletClick(it)}, onWalletAddClick, state.isWalletsLoading) {
                         onErrorChange(it)
                     }
                 }
                 item {
                     if(state.isGoal && state.goalTransactionsAmount!=null){
-                        GoalBox(state.goalName, state.goalTransactionsAmount, state.goalAmount)
+                        GoalBox(dimensions= dimensions,state.goalName, state.goalTransactionsAmount, state.goalAmount)
                     }
                 }
                 item {
-                    TransactionBox(state.date, state.transactions,state.isTransactionLoading, {onTransactionClick(it)},
+                    TransactionBox(dimensions,state.date, state.transactions,state.isTransactionLoading, {onTransactionClick(it)},
                         {onDateChange(it)}, state.wallets)
                 }
             }
@@ -185,15 +233,70 @@ fun MainScreenStateless(modifier: Modifier = Modifier,
 }
 
 
+data class FabAction(
+    val label: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit
+)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AppFabMenu(modifier: Modifier = Modifier, dimensions: Dimensions,
+               onAddWalletClick: ()-> Unit,
+               onAddTransactionClick: ()-> Unit,
+               onAddMonoClick: ()-> Unit) {
+    var expanded by remember {mutableStateOf(false)}
+    val actions = listOf(
+        FabAction("Додати гаманець", ImageVector.vectorResource(R.drawable.wallet_icon), onAddWalletClick),
+        FabAction("Додати гаманець mono", ImageVector.vectorResource(R.drawable.mono_wallet_icon), onAddMonoClick),
+        FabAction("Додати транзакцію", ImageVector.vectorResource(R.drawable.transaction_icon), onAddTransactionClick))
+    FloatingActionButtonMenu(
+        expanded = expanded,
+        button = {
+            ToggleFloatingActionButton(
+                checked = expanded,
+                onCheckedChange = {expanded = it},
+                containerColor = ToggleFloatingActionButtonDefaults.containerColor(
+                    initialColor = MaterialTheme.colorScheme.tertiary,
+                    finalColor = Color(0xFF204FF8)
+                ),
+                containerSize = {dimensions.buttonSize}
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(
+                        if(expanded) R.drawable.close_icon else R.drawable.add_icon,
+                    ),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(dimensions.iconSize*0.9f),
+                    contentDescription = null
+                )
+            }
+        }
+    ) {
+        actions.forEach { item->
+            FloatingActionButtonMenuItem(
+                onClick = {item.onClick()},
+                text = {Text(item.label, style = MaterialTheme.typography.bodyMedium) },
+                icon = {Icon(imageVector = item.icon, contentDescription = null, modifier = Modifier.size(dimensions.iconSize*0.9f))},
+                modifier = Modifier.height(dimensions.buttonSize),
+                contentColor = MaterialTheme.colorScheme.primary,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            )
+        }
+    }
+}
+
+
+
 // Верхня панель
 @Composable
-fun MainTopAppBar(userName: String, url: Uri?) {
+fun MainTopAppBar(userName: String, url: Uri?, dimensions: Dimensions) {
+    val sizeClass = LocalAppWindowInfo.current.windowSizeClass.windowWidthSizeClass
     Row(
         modifier = Modifier
             .wrapContentHeight()
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background).padding(10.dp)
-        ,
+            .background(MaterialTheme.colorScheme.background),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -205,7 +308,7 @@ fun MainTopAppBar(userName: String, url: Uri?) {
                 modifier = Modifier
                     .clip(CircleShape)
                     .aspectRatio(1f)
-                    .weight(0.097f)
+                    .weight(if (sizeClass == WindowWidthSizeClass.EXPANDED) 0.075f else 0.097f)
             )
         } else {
             Box(
@@ -224,7 +327,7 @@ fun MainTopAppBar(userName: String, url: Uri?) {
             }
         }
         Spacer(modifier = Modifier.weight(0.03f))
-        Column(modifier = Modifier.weight(0.758f)) {
+        Column(modifier = Modifier.weight(0.72f)) {
             Text(
                 text = userName,
                 style = MaterialTheme.typography.labelSmall,
@@ -253,29 +356,18 @@ fun MainTopAppBar(userName: String, url: Uri?) {
 
 // Гаманці
 @Composable
-fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, onWalletClick: (id: String) -> Unit, onWalletAddClick: () -> Unit,
+fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, onWalletClick: (id: String) -> Unit, onWalletAddClick: () -> Unit,
                                 isLoading: Boolean, onErrorChange:(String?) -> Unit){
     val listState = rememberLazyListState()
     val itemsPerPage = 2
     val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
     val firstVisibleOffset by remember { derivedStateOf { listState.firstVisibleItemScrollOffset } }
     var pageIndex = when (firstVisibleIndex) {
-        0 -> 0
-        1 -> 1
-        2 -> 2
-        3 -> 3
-        4 -> 4
-        else -> (firstVisibleIndex + 1) / itemsPerPage
-    }
-    if(firstVisibleIndex == 0 && firstVisibleOffset > 90){
-        pageIndex = 1
-    }
-    if(firstVisibleIndex == 1 && firstVisibleOffset > 120){
-        pageIndex = 2
-    }
-    if(firstVisibleIndex == 2 && firstVisibleOffset > 120){
-        pageIndex = 3
-    }
+        in 0..4 -> firstVisibleIndex
+        else -> (firstVisibleIndex + 1) / itemsPerPage }
+    if(firstVisibleIndex == 0 && firstVisibleOffset > 90){ pageIndex = 1 }
+    if(firstVisibleIndex == 1 && firstVisibleOffset > 120){ pageIndex = 2 }
+    if(firstVisibleIndex == 2 && firstVisibleOffset > 120){ pageIndex = 3 }
     val totalPages = when(wallets.size ){
         2->2
         3->3
@@ -283,37 +375,12 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, onWalletClick: (id: Strin
         5->4
         else -> 0
     }
-
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
     ){
-        // Заголовок
-        Row(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .height(ScreenSize.height * 0.035f)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.fillMaxWidth(0.055f))
-            Icon(
-                painter = painterResource(R.drawable.white_wallet),
-                contentDescription = null,
-                modifier = Modifier.fillMaxHeight(),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.fillMaxWidth(0.033f))
-            Text(
-                text = "Гаманці",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary)
-        }
-        Spacer(
-            modifier = Modifier
-                .height(ScreenSize.height * 0.02f)
-                .background(MaterialTheme.colorScheme.background)
-                .fillMaxWidth()
-        )
+        WalletsTitle(dimensions)
         // Гаманці
         if(isLoading){
             Box(
@@ -337,15 +404,14 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, onWalletClick: (id: Strin
                     .wrapContentHeight()
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(ScreenSize.width * 0.055f),
-                contentPadding = PaddingValues(horizontal = ScreenSize.width * 0.055f),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.horizontalPadding),
+                contentPadding = PaddingValues(horizontal = ScreenSize.width * 0.05f),
                 state = listState
             ) {
                 items(wallets) { wallet ->
-                    WalletCard(wallet = wallet) {
+                    WalletCard(wallet = wallet, dimensions = dimensions) {
                         if(wallet.id != "mono") {
                             onWalletClick(wallet.id)
-//                            navController.navigate("editwallet/$walletId")
                         }
                     }
                 }
@@ -355,13 +421,13 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, onWalletClick: (id: Strin
                             onErrorChange("Можна створити не більше трьох гаманців")
                         }
                         else{ onWalletAddClick() }
-//                        navController.navigate("addwallet") }
-                    })
+                    }, dimensions =dimensions)
                 }
             }
             // Індикатор
             if (wallets.size > 1) {
                 PagerIndicator(
+                    pagerSize = dimensions.pagerSize,
                     totalPages = totalPages,
                     currentPage = pageIndex,
                 )
@@ -377,111 +443,202 @@ fun WalletsLazyRowWithIndicator(wallets: List<Wallet>, onWalletClick: (id: Strin
     }
 }
 
+// Заголовок гаманців
+@Composable
+fun WalletsTitle(dimensions: Dimensions,modifier: Modifier = Modifier) {
+    Row(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(vertical = dimensions.verticalPadding)
+            .wrapContentHeight()
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(modifier = Modifier.weight(0.055f))
+        Icon(
+            painter = painterResource(R.drawable.white_wallet),
+            contentDescription = null,
+            modifier = Modifier.size(dimensions.iconSize),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.weight(0.033f))
+        Text(
+            text = "Гаманці",
+            modifier = Modifier.weight(0.912f),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary)
+    }
+}
+
 // Картка гаманця
 @Composable
-fun WalletCard(wallet: Wallet, onClick: () -> Unit) {
+fun WalletCard(dimensions: Dimensions, wallet: Wallet, onClick: () -> Unit) {
+
     Card(
         modifier = Modifier
-            .width(ScreenSize.width * 0.38f)
-            .height(ScreenSize.height * 0.19f)
-            .shadowsPlus(
-                type = ShadowsPlusType.SoftLayer,
-                color = Color.Black.copy(alpha = 0.25f),
-                radius = 4.dp,
-                offset = DpOffset(x = 2.dp, y = 4.dp),
-                spread = 1.dp,
-                shape = RoundedCornerShape(13.dp),
-                isAlphaContentClip = true
-            ),
-        shape = RoundedCornerShape(13.dp),
-        elevation = CardDefaults.cardElevation(),
+            .width(dimensions.cardWeight)
+            .height(dimensions.cardHeight),
+        shape = RoundedCornerShape(dimensions.cornerRadius),
+        elevation = CardDefaults.cardElevation(5.dp, ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary
         ),
         onClick = onClick
-
     ) {
-        Column(
-            modifier = Modifier.padding(ScreenSize.width *0.04f),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Image(
-                painter =
-                if(wallet.source == WalletSource.Api){
-                    painterResource(R.drawable.mono)
-                }else {
-                    if (wallet.type == WalletType.Cash)
-                        painterResource(R.drawable.cash)
-                    else
-                        painterResource(R.drawable.card)
-                },
-                contentDescription = null,
+        if(dimensions.screenSize == "Compact" || dimensions.screenSize == "Medium") {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.23f)
-                    .padding(bottom = 2.dp)
-            )
-            Text(
-                text = wallet.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(text = "${wallet.balance}", style = MaterialTheme.typography.headlineSmall)
-            Text(text = "UAH", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f))
+                    .padding(dimensions.verticalPadding)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Image(
+                    painter =
+                        if (wallet.source == WalletSource.Api) {
+                            painterResource(R.drawable.mono)
+                        } else {
+                            if (wallet.type == WalletType.Cash)
+                                painterResource(R.drawable.cash)
+                            else
+                                painterResource(R.drawable.card)
+                        },
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(dimensions.iconSize)
+                        .padding(bottom = 2.dp)
+                )
+                Text(
+                    text = wallet.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(text = "${wallet.balance}", style = MaterialTheme.typography.headlineSmall)
+                Text(
+                    text = "UAH",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                )
+            }
+        }else{
+            Row(
+                modifier = Modifier
+                    .padding(
+                        horizontal = dimensions.verticalPadding,
+                        vertical = dimensions.verticalPadding * 0.5f
+                    )
+                    .fillMaxHeight(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.verticalPadding)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.SpaceAround,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .fillMaxHeight()
+                ) {
+                    Image(
+                        painter =
+                            if (wallet.source == WalletSource.Api) {
+                                painterResource(R.drawable.mono)
+                            } else {
+                                if (wallet.type == WalletType.Cash)
+                                    painterResource(R.drawable.cash)
+                                else painterResource(R.drawable.card)
+                            },
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(dimensions.iconSize)
+                            .padding(bottom = 2.dp)
+                    )
+                    Text(
+                        text = wallet.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Box(Modifier
+                    .fillMaxHeight()
+                    .width(1.5.dp)
+                    .background(MaterialTheme.colorScheme.secondary))
+                Column(
+                    verticalArrangement = Arrangement.SpaceAround,
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .fillMaxHeight()
+                ) {
+                    Text(text = "${wallet.balance}", style = MaterialTheme.typography.headlineSmall)
+                    Text(
+                        text = "UAH",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                    )
+                }
+            }
         }
+
     }
 }
 
 // Картка "Додати гаманець"
 @Composable
-fun AddWalletCard(onClick: () -> Unit) {
+fun AddWalletCard(dimensions: Dimensions, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .width(ScreenSize.width * 0.38f)
-            .height(ScreenSize.height * 0.19f)
-            .clickable { onClick() }
-            .shadowsPlus(
-                type = ShadowsPlusType.SoftLayer,
-                color = Color.Black.copy(alpha = 0.25f),
-                radius = 4.dp,
-                offset = DpOffset(x = 2.dp, y = 4.dp),
-                spread = 1.dp,
-                shape = RoundedCornerShape(13.dp),
-                isAlphaContentClip = true
-            ),
-        shape = RoundedCornerShape(13.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)),
-        elevation = CardDefaults.cardElevation()
+            .width(dimensions.cardWeight)
+            .height(dimensions.cardHeight)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(dimensions.cornerRadius),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.plus),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth(0.23f)
-                )
-                Spacer(modifier = Modifier.height(5.dp))
-                Text(
-                    text = "Додати гаманець",
-                    maxLines = 2,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(end = ScreenSize.width *0.04f,
-                        start = ScreenSize.width *0.04f),
-                    textAlign = TextAlign.Center
-                )
+            when (dimensions.screenSize) {
+                "Compact", "Medium" -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        WalletAddCardContent(dimensions)
+                    }
+                }
+                else -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        WalletAddCardContent(dimensions, Modifier.padding(start = 15.dp))
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
+fun WalletAddCardContent(dimensions: Dimensions, modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(R.drawable.plus),
+        contentDescription = null,
+        modifier = Modifier.size(dimensions.iconSize)
+    )
+    Spacer(modifier = modifier.height(dimensions.verticalPadding))
+    Text(
+        text = "Додати\n гаманець",
+        maxLines = 2,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+        textAlign = TextAlign.Center
+    )
+}
+
+
+@Composable
 fun TransactionBox(
+    dimensions: Dimensions,
     date: Long,
     transactions: List<Transaction>,
     isTransactionLoading: Boolean,
@@ -492,123 +649,187 @@ fun TransactionBox(
     Column(
         modifier = Modifier
             .padding(horizontal = ScreenSize.width * 0.055f)
-            .padding(bottom = 30.dp, top = 20.dp)
+            .padding(bottom = dimensions.verticalPadding * 2, top = dimensions.horizontalPadding)
             .shadowsPlus(
                 type = ShadowsPlusType.SoftLayer,
                 color = Color.Black.copy(alpha = 0.25f),
                 radius = 4.dp,
                 offset = DpOffset(x = 2.dp, y = 2.dp),
                 spread = 1.dp,
-                shape = RoundedCornerShape(15.dp),
+                shape = RoundedCornerShape(dimensions.cornerRadius),
                 isAlphaContentClip = true
             )
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(horizontal = ScreenSize.width * 0.035f)
-            .padding(top = 0.dp, bottom = ScreenSize.width * 0.05f)
+            .padding(horizontal = dimensions.horizontalPadding)
+            .padding(top = 0.dp, bottom = dimensions.verticalPadding * 2)
     ){
         var showDatePicker by remember { mutableStateOf(false) }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(ScreenSize.height * 0.075f)
-                .padding(bottom = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
-        ){
-            Text(
-                text= "Список транзакцій",
-                style = MaterialTheme.typography.headlineSmall,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .wrapContentWidth()
-                    .clickable { showDatePicker = !showDatePicker },
-                contentAlignment = Alignment.BottomEnd
-            ){
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    Text(
-                        text = formattedDate(date),
-                        style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.secondary)
-                    )
-                    Icon(
-                        painter = painterResource(R.drawable.calendar),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier
-                            .fillMaxHeight(0.6f)
-                            .padding(start = 5.dp)
-                    )
-                }
-                if(showDatePicker) {
-                    AppDatePickerDialog(date, onDateChange) {showDatePicker = false}
-                }
-            }
+        if(showDatePicker) {
+            AppDatePickerDialog(date, onDateChange) {showDatePicker = false}
         }
-
+        TransactionTitle(dimensions,date = date) {showDatePicker = !showDatePicker}
+        Line(height = dimensions.lineWidth)
         if(transactions.isEmpty()) {Line()}
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 7000.dp, min = ScreenSize.height * 0.11f),
-            userScrollEnabled = false
-        ) {
-            if(isTransactionLoading){
-                item {
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .height(ScreenSize.height * 0.11f),
-                        contentAlignment = Alignment.BottomCenter) {
-                        LinearProgressIndicator(
-                            color = MaterialTheme.colorScheme.background,
-                            trackColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                        )
-                    }
-                }
-            }else {
-                if (transactions.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(ScreenSize.height * 0.11f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Немає таранзакцій за обрану дату",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                                ),
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
-                    }
-                } else {
-                    items(transactions) { transaction ->
-                        val transactionId = transaction.id
-                        TransactionRow(
-                            transaction,
-                            wallets = wallets
-                        ) {
-                            onTransactionClick(transactionId)
-//                            navController.navigate("transactioninfo/$transactionId")
-                        }
-                    }
-                }
-            }
+        when(dimensions.screenSize){
+            "Compact" , "Medium" -> TransactionsLazyColumn(Modifier, dimensions, transactions, onTransactionClick, isTransactionLoading, wallets)
+            else -> TransactionLazyGrid(Modifier, dimensions, transactions, onTransactionClick, isTransactionLoading, wallets)
         }
-        Line()
     }
 }
 
 @Composable
+fun TransactionsLazyColumn(modifier: Modifier = Modifier, dimensions: Dimensions,
+                           transactions: List<Transaction>, onTransactionClick: (String) -> Unit,
+                           isTransactionLoading: Boolean, wallets: List<Wallet>) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .heightIn(max = 7000.dp, min = ScreenSize.height * 0.11f),
+        userScrollEnabled = false
+    ) {
+        if(isTransactionLoading){
+            item {
+                TransactionIndicator(dimensions =dimensions)
+            }
+        }else {
+            if (transactions.isEmpty()) {
+                item {
+                    TransactionEmptyBox()
+                }
+            } else {
+                items(transactions) { transaction ->
+                    val transactionId = transaction.id
+                    TransactionRow(
+                        dimensions,
+                        transaction,
+                        wallets = wallets
+                    ) {
+                        onTransactionClick(transactionId)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TransactionLazyGrid(modifier: Modifier = Modifier, dimensions: Dimensions,
+                        transactions: List<Transaction>, onTransactionClick: (String) -> Unit,
+                        isTransactionLoading: Boolean, wallets: List<Wallet>) {
+    LazyVerticalGrid(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .heightIn(max = 7000.dp, min = ScreenSize.height * 0.11f),
+        userScrollEnabled = false,
+        horizontalArrangement = Arrangement.spacedBy(dimensions.verticalPadding),
+        columns = GridCells.Fixed(2)
+    ){
+        if(isTransactionLoading){
+            item (span = { GridItemSpan(maxLineSpan) }) {
+                TransactionIndicator(dimensions = dimensions)
+            }
+        }else if(transactions.isEmpty()) {
+            item(span = {GridItemSpan(maxLineSpan)}){
+                TransactionEmptyBox()
+            }
+        }else {
+            items(transactions) { transaction ->
+                val transactionId = transaction.id
+                TransactionRow(
+                    dimensions,
+                    transaction,
+                    wallets = wallets
+                ) {
+                    onTransactionClick(transactionId)
+                }
+            }
+        }
+    }
+
+}
+
+@Composable
+fun TransactionTitle(dimensions: Dimensions,modifier: Modifier = Modifier, date: Long, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(vertical = dimensions.verticalPadding * 0.8f),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Text(
+            text= "Список транзакцій",
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .wrapContentWidth()
+                .clickable { onClick() },
+            contentAlignment = Alignment.BottomEnd
+        ){
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Text(
+                    text = formattedDate(date),
+                    style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.secondary)
+                )
+                Icon(
+                    painter = painterResource(R.drawable.calendar),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier
+                        .size(dimensions.iconSize)
+                        .padding(start = dimensions.horizontalPadding * 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TransactionIndicator(modifier: Modifier = Modifier, dimensions: Dimensions) {
+    Box(modifier = modifier
+        .fillMaxWidth()
+        .height(ScreenSize.height * 0.11f),
+        contentAlignment = Alignment.BottomCenter) {
+        LinearProgressIndicator(
+            color = MaterialTheme.colorScheme.background,
+            trackColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(dimensions.progressBarHeight)
+        )
+    }
+}
+
+@Composable
+fun TransactionEmptyBox(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(ScreenSize.height * 0.11f),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Немає таранзакцій за обрану дату",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+
+@Composable
 fun TransactionRow(
+    dimensions: Dimensions,
     transaction:Transaction,
     wallets: List<Wallet>,
     onClick: () -> Unit
@@ -616,75 +837,79 @@ fun TransactionRow(
     val selectedCategory = findCategoryById(transaction.categoryId)
     val selectedWallet = wallets.first { it.id == transaction.walletId }
     val selectedWalletTo = wallets.firstOrNull{it.id == transaction.walletIdTo}
-    Line()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(ScreenSize.height * 0.11f)
-            .clickable {
-                onClick()
-            }
-        ,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ){
-        Image(
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(vertical = dimensions.verticalPadding * 0.8f)
+                .clickable {
+                    onClick()
+                },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
                 painter = painterResource(selectedCategory.iconRes),
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth(0.13f)
-        )
-        Column(
-            modifier = Modifier
-                .weight(0.65f)
-                .padding(horizontal = 6.dp)
-        ){
-            Text(
-                text = selectedCategory.name +
-                        if(transaction.type == TransactionType.Transfer){
-                            ", " + transaction.description
-                        }else{
-                            ""
-                        }
-                ,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2
+                modifier = Modifier.height(dimensions.iconSize * 1.1f)
             )
-            Text(
-                text = selectedWallet.name +
-                        if(transaction.description.isNotEmpty()&& transaction.type!= TransactionType.Transfer){
-                            ", " + transaction.description
-                        } else if(transaction.type== TransactionType.Transfer && selectedWalletTo!=null){
-                            "->${selectedWalletTo.name}"
-                        } else {
-                            ""
-                               }
-                ,
-                style = MaterialTheme.typography.bodyMedium.copy(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)),
-                maxLines = 1,
-                modifier = Modifier.padding(top = 1.dp),
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Column(modifier = Modifier.weight(0.35f)) {
-            val sign = if(transaction.type == TransactionType.Income){
-                "+"
-            }else if(transaction.description == "Зовнішній(витрата)"){
-                "-"
-            }else ""
+            Column(
+                modifier = Modifier
+                    .weight(0.55f)
+                    .padding(dimensions.horizontalPadding * 0.3f)
+            ) {
+                Text(
+                    text = selectedCategory.name +
+                            if (transaction.type == TransactionType.Transfer) {
+                                ", " + transaction.description
+                            } else {
+                                ""
+                            },
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = selectedWallet.name +
+                            if (transaction.description.isNotEmpty() && transaction.type != TransactionType.Transfer) {
+                                ", " + transaction.description
+                            } else if (transaction.type == TransactionType.Transfer && selectedWalletTo != null) {
+                                "->${selectedWalletTo.name}"
+                            } else {
+                                ""
+                            },
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        MaterialTheme.colorScheme.onPrimary.copy(
+                            alpha = 0.5f
+                        )
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Column(modifier = Modifier.weight(0.45f)) {
+                val sign = if (transaction.type == TransactionType.Income) {
+                    "+"
+                } else if (transaction.description == "Зовнішній(витрата)") {
+                    "-"
+                } else ""
 
-            Text(
-                text = sign + transaction.amount.toString() + "₴" ,
-                style = MaterialTheme.typography.headlineSmall.copy(MaterialTheme.colorScheme.onTertiary),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Right
-            )
-        }
+                Text(
+                    text = sign + transaction.amount.toString() + "₴",
+                    style = MaterialTheme.typography.headlineSmall.copy(MaterialTheme.colorScheme.onTertiary),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Right
+                )
+            }
 
+        }
+        Line(height = dimensions.lineWidth)
     }
 }
 
 @Composable
-fun GoalBox(goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?){
+fun GoalBox(dimensions: Dimensions, goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?){
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -706,7 +931,12 @@ fun GoalBox(goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?
         Column (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = ScreenSize.width * 0.055f, vertical = 7.dp)
+                .padding(
+                    horizontal = if (dimensions.screenSize == "Expanded") {
+                        ScreenSize.width * 0.1f
+                    } else ScreenSize.width * 0.055f,
+                    vertical = 7.dp
+                )
                 .wrapContentHeight()
                 .shadowsPlus(
                     type = ShadowsPlusType.SoftLayer,
@@ -717,7 +947,7 @@ fun GoalBox(goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?
                     shape = RoundedCornerShape(15.dp),
                     isAlphaContentClip = true
                 )
-                .clip(RoundedCornerShape(15.dp))
+                .clip(RoundedCornerShape(dimensions.cornerRadius))
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(horizontal = ScreenSize.width * 0.035f, vertical = 5.dp)
 
@@ -738,7 +968,7 @@ fun GoalBox(goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 5.dp)) {
+                    .padding(vertical = dimensions.verticalPadding * 0.33f)) {
                 val planAmount = goalAmount
                 val amount = goalTransactionsAmount?.let { abs(it) }
                 var progress: Float = 0F
@@ -767,7 +997,7 @@ fun GoalBox(goalName: String?, goalTransactionsAmount: Double?, goalAmount: Int?
                         .weight(0.8f)
                         .padding(end = 10.dp)
                         .fillMaxWidth()
-                        .height(6.dp),
+                        .height(dimensions.progressBarHeight),
                     color = color,
                     trackColor = Color.LightGray,
                     strokeCap = StrokeCap.Round,
@@ -809,16 +1039,10 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
             message = "Ви виконали поставлену ціль, хоч час ще залишився!\n Хочете створити новий план чи залишитись на поточному?",
             confirmText = "Поточний",
             onConfirm = {
-//                viewModel.setContinued()
-//                showGoalReachedDialog = false
                 onContinued()
                         },
             dismissText = "Новий план",
             onDismiss = {
-//                viewModel.deletePlan()
-//                navController.navigate("form"){
-//                    popUpTo(0){inclusive = true}
-//                }
                 onDelete()
             },
             cancelable = false
@@ -840,18 +1064,10 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
             message = "Ви не виконали поставлену ціль, а час плану вже минув. Давайте створимо новий?",
             confirmText = "Зрозуміло",
             onConfirm = {
-//                viewModel.deletePlan()
-//                navController.navigate("mainscreen"){
-//                    popUpTo(0){inclusive = true}
-//                }
                 onDelete()
             },
             dismissText = "Новий план",
             onDismiss = {
-//                viewModel.deletePlan()
-//                navController.navigate("form"){
-//                    popUpTo(0){inclusive = true}
-//                }
                 onDelete()
             },
             cancelable = false
@@ -864,18 +1080,10 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
             message = "Ви виконали поставлену ціль, та й термін вже минув. Давайте створимо новий план?",
             confirmText = "Зрозуміло",
             onConfirm = {
-//                viewModel.deletePlan()
-//                navController.navigate("mainscreen"){
-//                    popUpTo(0){inclusive = true}
-//                }
                 onDelete()
             },
             dismissText = "Новий план",
             onDismiss = {
-//                viewModel.deletePlan()
-//                navController.navigate("form"){
-//                    popUpTo(0){inclusive = true}
-//                }
                 onDelete()
             },
             cancelable = false
@@ -948,6 +1156,7 @@ private fun MainScreenMedium() {
     }
 }
 
+@SuppressLint("SuspiciousIndentation")
 @Preview(showSystemUi = true, showBackground = true,
     device = "spec:width=1280dp,height=800dp,dpi=240"
 )

@@ -26,7 +26,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -55,9 +59,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
@@ -93,6 +100,19 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
     val listState = rememberLazyListState()
     val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
     val firstVisibleOffset by remember { derivedStateOf { listState.firstVisibleItemScrollOffset } }
+    val columnState = rememberLazyListState()
+    val showScrollToTopButton by remember {
+        derivedStateOf {
+            columnState.firstVisibleItemIndex > 0
+        }
+    }
+    var scrollToFirstItem by remember { mutableStateOf(false) }
+    LaunchedEffect(scrollToFirstItem) {
+        if(scrollToFirstItem){
+            columnState.animateScrollToItem(index = 0)
+            scrollToFirstItem = false
+        }
+    }
     LaunchedEffect(state.error) {
         state.error?.let {
             snackBarHostState.showSnackbar(it)
@@ -102,8 +122,9 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
     SoftLayerShadowContainer {
         Scaffold(
             topBar = {
-                if (firstVisibleIndex == 0) {
-                    CategoriesTopApp(state) {startDate, endDate ->viewModel.onDateRangeSelected(startDate, endDate)}
+                if (firstVisibleIndex == 0 ) {
+                    CategoriesTopApp(state) {startDate,
+                                             endDate ->viewModel.onDateRangeSelected(startDate, endDate)}
                 } else {
                     MyTopAppBarNoIcon("План витрат", MaterialTheme.colorScheme.tertiaryContainer)
                 }
@@ -116,11 +137,20 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
                         snackbarData = data
                     )
                 })
-            }
+            },
+            floatingActionButton = {
+                if(showScrollToTopButton){
+                    ScrollToTopButton {
+                        scrollToFirstItem = true
+                    }
+                }
+            },
+            floatingActionButtonPosition = FabPosition.Center
         ) { innerPadding ->
             if (state.isLoading) LoadingDataScreen()
             else {
                 LazyColumn(
+                    state = columnState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight()
@@ -130,13 +160,16 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
                     item {
                         val chartDataList = listOf(state.categoriesChartData, state.planChartData)
                         Column(
-                            Modifier.wrapContentHeight().wrapContentWidth().background(
-                                if (firstVisibleIndex == 0) {
-                                    MaterialTheme.colorScheme.background
-                                } else {
-                                    MaterialTheme.colorScheme.tertiaryContainer
-                                }
-                            )
+                            Modifier
+                                .wrapContentHeight()
+                                .wrapContentWidth()
+                                .background(
+                                    if (firstVisibleIndex == 0) {
+                                        MaterialTheme.colorScheme.background
+                                    } else {
+                                        MaterialTheme.colorScheme.tertiaryContainer
+                                    }
+                                )
                         ) {
                             LazyRow(
                                 state = listState,
@@ -171,6 +204,24 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun ScrollToTopButton(modifier: Modifier = Modifier, onClick: ()-> Unit) {
+    IconButton(
+        onClick = onClick,
+        shape = IconButtonDefaults.mediumRoundShape,
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = MaterialTheme.colorScheme.tertiary
+        )
+    ) {
+        Icon(
+            imageVector = ImageVector.vectorResource(R.drawable.arrow_appward),
+            contentDescription = null,
+            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
+}
 
 @Composable
 fun CategoriesPieChart(chartData: List<PieSlice>, index: Int) {
@@ -179,9 +230,12 @@ fun CategoriesPieChart(chartData: List<PieSlice>, index: Int) {
         val topPadding = if(chartData.isNotEmpty()) 60.dp else 30.dp
         CategoryDonutChart(
             chartData,
-            Modifier.size(231.dp).padding(
-                bottom = bottomPadding, top = topPadding
-            ).align(Alignment.Center),
+            Modifier
+                .size(231.dp)
+                .padding(
+                    bottom = bottomPadding, top = topPadding
+                )
+                .align(Alignment.Center),
             index = index
         )
     }
@@ -208,7 +262,9 @@ fun CategoriesBox(state: CategoriesViewModel.UiState) {
             .padding(top = 0.dp, bottom = ScreenSize.width * 0.05f)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.065f)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ScreenSize.height * 0.065f)
                 .padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
@@ -241,7 +297,9 @@ fun CategoriesBox(state: CategoriesViewModel.UiState) {
         }else{
             Line()
             Box(
-                modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.11f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ScreenSize.height * 0.11f),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -266,7 +324,7 @@ fun ButtonToFormScreen(state: CategoriesViewModel.UiState, navController: NavCon
             .drawBehind {
                 val half = size.height / 2
                 drawRect(
-                    color = if(index == 0)Color(0xFF55D6BE)else Color(0xFF4FC3F7),
+                    color = if (index == 0) Color(0xFF55D6BE) else Color(0xFF4FC3F7),
                     topLeft = Offset(0f, 0f),
                     size = Size(size.width, half)
                 )
@@ -307,7 +365,9 @@ fun ButtonToFormScreen(state: CategoriesViewModel.UiState, navController: NavCon
                 Image(
                     painter = painterResource(R.drawable.arrow_),
                     contentDescription = null,
-                    modifier = Modifier.width(50.dp).height(30.dp)
+                    modifier = Modifier
+                        .width(50.dp)
+                        .height(30.dp)
                 )
             }
         }
@@ -338,7 +398,9 @@ fun IncomeExpensesBox(state: CategoriesViewModel.UiState){
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.padding(vertical = 5.dp).fillMaxWidth()
+            modifier = Modifier
+                .padding(vertical = 5.dp)
+                .fillMaxWidth()
         ){
             Text(
                 text = "Доходи",
@@ -355,7 +417,9 @@ fun IncomeExpensesBox(state: CategoriesViewModel.UiState){
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.padding(vertical = 5.dp).fillMaxWidth()
+            modifier = Modifier
+                .padding(vertical = 5.dp)
+                .fillMaxWidth()
         ){
             Text(
                 text = "Витрати",
@@ -399,7 +463,9 @@ fun PlannedCategoryLine(
             modifier = Modifier.size(35.dp)
         )
         Column(
-            modifier = Modifier.weight(0.65f).padding(horizontal = 6.dp)
+            modifier = Modifier
+                .weight(0.65f)
+                .padding(horizontal = 6.dp)
         ) {
             Text(
                 text = name,
@@ -454,7 +520,9 @@ fun PlannedCategoryLine(
                             alpha = 0.6f
                         )
                     ),
-                    modifier = Modifier.padding(top = 3.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(top = 3.dp)
+                        .fillMaxWidth(),
                     textAlign = TextAlign.End,
                     maxLines = 2
                 )
@@ -476,7 +544,9 @@ fun PlannedCategoryLine(
                             alpha = 0.8f
                         )
                     ),
-                    modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 3.dp),
                     textAlign = TextAlign.Right
                 )
             }
@@ -489,7 +559,10 @@ fun PlannedCategoryLine(
 @Composable
 fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (Long, Long)-> Unit){
     Row(
-        modifier = Modifier.fillMaxWidth().height(ScreenSize.height *0.097f).background(MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(ScreenSize.height * 0.097f)
+            .background(MaterialTheme.colorScheme.background),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -505,13 +578,15 @@ fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (L
         val datePickerState = rememberDatePickerState(selectableDates = selectableDates, initialSelectedDateMillis = startDateSec*1000)
         // відстежуємо натискання користувачем на дату
         LaunchedEffect(datePickerState.selectedDateMillis) {
-            val selectedRangeInMillis =
-                getMonthBounds(datePickerState.selectedDateMillis ?: 0L)
-            onDateRangeSelected(
-                selectedRangeInMillis.first,
-                selectedRangeInMillis.second
-            )
-            showDatePickerDocked = false
+            if(showDatePickerDocked && datePickerState.selectedDateMillis!=null) {
+                val selectedRangeInMillis =
+                    getMonthBounds(datePickerState.selectedDateMillis ?: 0L)
+                onDateRangeSelected(
+                    selectedRangeInMillis.first,
+                    selectedRangeInMillis.second
+                )
+                showDatePickerDocked = false
+            }
         }
         Text(
             text = formatMonthYear(startDateSec, endDateSec),
@@ -528,15 +603,23 @@ fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (L
                 painter = painterResource(R.drawable.calendar),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxHeight(0.4f).padding(start = 5.dp).align(Alignment.Center)
+                modifier = Modifier
+                    .fillMaxHeight(0.4f)
+                    .padding(start = 5.dp)
+                    .align(Alignment.Center)
             )
         }
         if(showDatePickerDocked){
             Popup(onDismissRequest = {showDatePickerDocked = false}, alignment = Alignment.TopStart)
             {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = ScreenSize.height* 0.07f).wrapContentHeight()
-                        .background(Color.Transparent).scale(0.9f).shadow(5.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = ScreenSize.height * 0.07f)
+                        .wrapContentHeight()
+                        .background(Color.Transparent)
+                        .scale(0.9f)
+                        .shadow(5.dp)
                 ){
                     Column {
                         DatePicker(

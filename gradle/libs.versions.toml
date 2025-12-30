@@ -17,6 +17,7 @@ kotlinxCoroutinesAndroid = "1.7.3"
 lifecycleRuntimeKtx = "2.8.4"
 activityCompose = "1.9.2"
 composeBom = "2024.09.02"
+material3 = "1.5.0-alpha11"
 mpandroidchart = "v3.1.0"
 navigationRuntime = "2.8.3"
 navigationRuntimeKtx = "2.8.3"
@@ -40,6 +41,7 @@ navigationTestingAndroid = "2.9.6"
 
 [libraries]
 accompanist-navigation-animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanistNavigationAnimation" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-material3-adaptive-navigation-suite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite" }

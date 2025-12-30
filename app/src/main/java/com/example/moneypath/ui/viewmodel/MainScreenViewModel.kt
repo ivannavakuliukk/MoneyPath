@@ -59,6 +59,8 @@ open class MainScreenViewModel @Inject constructor (
         loadUser()
         loadWallets()
         loadTransactionsByDate(System.currentTimeMillis()/1000)
+        helper.saveGoalAmount(40000)
+        helper.saveGoalName("Ноутбук")
         val goalName = helper.getGoalName()
         val goalAmount = helper.getGoalAmount()
         val isContinued = helper.getContinued()

@@ -1,15 +1,19 @@
 package com.example.moneypath.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,12 +22,16 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -43,6 +51,9 @@ import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -131,9 +142,11 @@ fun AddTransactionScreen(navController: NavController, date: Long, isGoal:Boolea
                             },
                             text = "Зберегти",
                             color = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.padding(
-                                horizontal = ScreenSize.width * 0.055f,
-                            ).padding(bottom = 15.dp, top = 10.dp)
+                            modifier = Modifier
+                                .padding(
+                                    horizontal = ScreenSize.width * 0.055f,
+                                )
+                                .padding(bottom = 15.dp, top = 10.dp)
                         )
                     }
                 },
@@ -204,51 +217,20 @@ fun TransactionInputSection(
     onAmountChange: (String) -> Unit
 ){
     Column(
-        Modifier.fillMaxWidth()
+        Modifier
+            .fillMaxWidth()
             .wrapContentHeight()
             .background(state.type.backgroundColor())
-            .padding(horizontal = ScreenSize.width* 0.055f)
+            .padding(horizontal = ScreenSize.width * 0.055f)
     ) {
-        TabRow(
-            selectedTabIndex = state.type.ordinal,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(ScreenSize.height * 0.05f)
-                .clip(RoundedCornerShape(15.dp))
-            ,
-        ) {
-            TransactionType.entries.forEachIndexed { index, type ->
-                Tab(
-                    selected = state.type == type,
-                    onClick = { onTypeChange(type) },
-                    text = {
-                        Text(
-                            text = type.toDisplayName(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color =
-                            if(type == state.type)
-                                MaterialTheme.colorScheme.onPrimary
-                            else
-                                MaterialTheme.colorScheme.primary
-                        ) },
-                    modifier = Modifier.background(
-                        if(type == state.type) {
-                            MaterialTheme.colorScheme.primary
-                        }
-                        else{
-                            when(state.type){
-                                TransactionType.Income -> MaterialTheme.colorScheme.secondary
-                                TransactionType.Transfer -> MaterialTheme.colorScheme.inverseOnSurface
-                                TransactionType.Expense -> MaterialTheme.colorScheme.onSurface
-                            }
-                        }
-                    )
-                )
-            }
-        }
+        TransactionSegmentedButton(
+            selectedType = state.type,
+        ) { onTypeChange(it)}
         // Поле вводу з автоматичним знаком
         Row(
-            modifier = Modifier.fillMaxWidth().height(ScreenSize.height * 0.2f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ScreenSize.height * 0.2f),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -294,6 +276,56 @@ fun TransactionInputSection(
                     .fillMaxWidth()
                     .fillMaxHeight()
 
+            )
+        }
+    }
+}
+
+@Composable
+fun TransactionSegmentedButton(modifier: Modifier = Modifier, selectedType: TransactionType, onClick: (TransactionType)-> Unit) {
+    SingleChoiceSegmentedButtonRow {
+        TransactionType.entries.forEachIndexed { index, type->
+            SegmentedButton(
+                selected = selectedType == type,
+                onClick = { onClick(type) },
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = TransactionType.entries.size
+                ),
+                label = {Text(type.toDisplayName(), style = MaterialTheme.typography.bodyLarge,
+                    modifier = modifier.padding(end = 15.dp),)},
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                    inactiveContainerColor =  when(selectedType){
+                        TransactionType.Income -> MaterialTheme.colorScheme.secondary
+                        TransactionType.Transfer -> MaterialTheme.colorScheme.inverseOnSurface
+                        TransactionType.Expense -> MaterialTheme.colorScheme.onSurface
+                    },
+                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                    inactiveContentColor = MaterialTheme.colorScheme.primary,
+                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                    inactiveBorderColor = MaterialTheme.colorScheme.primary
+                ),
+                icon = {
+                    val visible = type == selectedType
+                    val scale by animateFloatAsState(targetValue = if (visible) 1f else 0f,
+                        animationSpec = tween(durationMillis = 500))
+                    val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f,
+                        animationSpec = tween(durationMillis = 500))
+
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.check),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                alpha = alpha
+                            )
+                    )
+
+                }
             )
         }
     }

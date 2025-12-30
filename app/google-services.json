@@ -15,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "173530012245-08jc2gfdp6r6rng4qe7q8ja7qauunb96.apps.googleusercontent.com",
+          "client_id": "173530012245-p3v80pk48mq4fc2k9n9tfn7thhdkfr6r.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.moneypath",
-            "certificate_hash": "db5ebd4814aaba125b14814c3029c7e7433d6d94"
+            "certificate_hash": "28dc062f3db609521754944850c889812c29e58b"
           }
         },
         {

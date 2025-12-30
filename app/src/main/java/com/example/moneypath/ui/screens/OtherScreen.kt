@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -99,10 +101,12 @@ fun OtherScreen(navController: NavController, viewModel: OtherViewModel = hiltVi
             }
         )
         { innerPadding ->
+            val scrollState = rememberScrollState()
             Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.primary)
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(innerPadding)
+                    .background(MaterialTheme.colorScheme.primary).verticalScroll(scrollState)
             ) {
+
                 Column(
                     modifier = Modifier
                         .padding(horizontal = ScreenSize.width * 0.055f)

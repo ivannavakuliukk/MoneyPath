@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
@@ -74,6 +72,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,8 +93,8 @@ import java.util.Calendar
 
 // Лінія
 @Composable
-fun Line(color: Color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f), modifier: Modifier = Modifier){
-    Box(modifier = modifier.fillMaxWidth().height(1.dp).background(color))
+fun Line(color: Color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f), modifier: Modifier = Modifier, height: Dp  = 1.dp){
+    Box(modifier = modifier.fillMaxWidth().height(height).background(color))
 }
 
 /*
@@ -293,6 +292,7 @@ fun AppAlertDialog(text:String, onConfirmClick: () -> Unit, onCancelClick: ()-> 
  */
 @Composable
 fun PagerIndicator(
+    pagerSize: Dp = 8.dp,
     totalPages: Int,
     currentPage: Int,
     background: Color = MaterialTheme.colorScheme.background
@@ -304,13 +304,13 @@ fun PagerIndicator(
             .fillMaxWidth()
             .background(background)
             .wrapContentHeight()
-            .padding(top = 6.dp, bottom = 6.dp)
+            .padding(top = pagerSize*0.7f, bottom = pagerSize*0.7f)
     ) {
         repeat(totalPages) { index ->
             Box(
                 modifier = Modifier
-                    .padding(4.dp)
-                    .size(if (index == currentPage) 10.dp else 8.dp)
+                    .padding(pagerSize/2)
+                    .size(if (index == currentPage) pagerSize*1.25f else pagerSize)
                     .clip(CircleShape)
                     .background(
                         if (index == currentPage)
@@ -478,11 +478,9 @@ fun TextFieldForDate(
                 .clickable { onClick() },
             trailingIcon = {
                 Icon(
-                    imageVector = Icons.Default.DateRange,
+                    painter = painterResource(id = R.drawable.calendar),
                     contentDescription = "Вибір дати",
-                    modifier = if(iconPadding!=null){
-                        Modifier.padding(start = iconPadding.dp)
-                    }else Modifier
+                    modifier =  Modifier.size(24.dp)
                 )
             },
             colors = textFieldColors,

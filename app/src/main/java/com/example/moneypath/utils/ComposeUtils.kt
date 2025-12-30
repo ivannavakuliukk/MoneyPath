@@ -148,23 +148,16 @@ fun Modifier.rotateVertically(clockwise: Boolean = true): Modifier {
     return rotate then adjustBounds
 }
 
-@Composable
-fun adaptivePadding(): Dp {
-    val widthClass = LocalAppWindowInfo.current.windowSizeClass.windowWidthSizeClass
-    return when (widthClass) {
-        WindowWidthSizeClass.COMPACT -> 10.dp  // телефон
-        WindowWidthSizeClass.MEDIUM  -> 20.dp  // середній екран
-        WindowWidthSizeClass.EXPANDED -> 32.dp // планшет
-        else -> 10.dp
-    }
-}
-
-// Зберігаємо Metrics і SizeClass для всього додатку
-data class AppWindowInfo(
-    val windowSizeClass: WindowSizeClass
+data class Dimensions(
+    val screenSize: String = "Compact",
+    val iconSize: Dp = 28.dp,
+    val verticalPadding: Dp = 15.dp,
+    val cardWeight: Dp = 130.dp,
+    val cardHeight: Dp = 120.dp,
+    val cornerRadius: Dp = 13.dp,
+    val horizontalPadding: Dp = 20.dp,
+    val pagerSize: Dp = 8.dp,
+    val progressBarHeight: Dp = 6.dp,
+    val lineWidth: Dp = 1.dp,
+    val buttonSize: Dp = 45.dp
 )
-
-// CompositionLocal для доступу з будь-якого Composable
-val LocalAppWindowInfo = staticCompositionLocalOf<AppWindowInfo> {
-    error("No AppWindowInfo provided")
-}
