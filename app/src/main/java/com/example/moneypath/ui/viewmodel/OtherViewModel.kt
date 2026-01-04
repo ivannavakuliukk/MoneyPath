@@ -10,9 +10,9 @@ import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.data.repository.MonobankRepository
-import com.example.moneypath.usecase.business.MonobankSyncManager
-import com.example.moneypath.usecase.crypto.AddOrUpdateWalletUseCase
+import com.example.moneypath.domain.repository.MonobankRepository
+import com.example.moneypath.domain.usecase.business.MonobankSyncManager
+import com.example.moneypath.domain.usecase.crypto.AddOrUpdateWalletUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

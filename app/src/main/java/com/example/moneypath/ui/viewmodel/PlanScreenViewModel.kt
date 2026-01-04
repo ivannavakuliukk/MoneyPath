@@ -6,15 +6,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneypath.data.local.PrefsHelper
 import com.example.moneypath.data.models.BudgetPlanDB
-import com.example.moneypath.data.models.BudgetPlanRequest
 import com.example.moneypath.data.models.Categories
 import com.example.moneypath.data.models.SettingsDB
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.business.OptimizeUseCase
-import com.example.moneypath.usecase.business.SelectAdditionalPlanUseCase
+import com.example.moneypath.domain.usecase.business.SelectAdditionalPlanUseCase
 import com.example.moneypath.utils.TimeDiff
 import com.example.moneypath.utils.calculateMonthsAndDaysBetween
 import dagger.hilt.android.lifecycle.HiltViewModel

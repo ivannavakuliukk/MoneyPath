@@ -2,25 +2,21 @@ package com.example.moneypath.ui.viewmodel
 
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneypath.data.local.PrefsHelper
-import com.example.moneypath.data.models.Transaction
+import com.example.moneypath.domain.models.Transaction
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.business.DeletePlanUseCase
-import com.example.moneypath.usecase.crypto.ObserveTransactionsGoalUseCase
-import com.example.moneypath.usecase.crypto.ObserveTransactionsUseCase
-import com.example.moneypath.usecase.crypto.ObserveWalletsUseCase
+import com.example.moneypath.domain.usecase.business.DeletePlanUseCase
+import com.example.moneypath.domain.usecase.crypto.ObserveTransactionsGoalUseCase
+import com.example.moneypath.domain.usecase.crypto.ObserveTransactionsUseCase
+import com.example.moneypath.domain.usecase.crypto.ObserveWalletsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 // ViewModel сторінки MainScreen

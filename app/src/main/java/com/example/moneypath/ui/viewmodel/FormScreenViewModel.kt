@@ -6,11 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.repository.BackendRepository
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.business.OptimizeUseCase
+import com.example.moneypath.domain.usecase.business.OptimizeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

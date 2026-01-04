@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id ("kotlin-kapt")
     alias(libs.plugins.hilt.android)
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
 }
 
 android {
@@ -82,6 +83,7 @@ dependencies {
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.androidx.navigation.testing.android)
     implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.foundation.layout)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth)
@@ -105,9 +107,15 @@ dependencies {
     implementation (libs.coil.compose)
     implementation (libs.androidx.security.crypto)
 
-    implementation (libs.reorderable)
+    implementation(libs.reorderable.new)
     implementation (libs.mpandroidchart)
     implementation(libs.androidx.material3.adaptive.navigation.suite)
+
+    // Kotlin Serialization JSON
+    implementation(libs.kotlinx.serialization.json.v160)
+    // Retrofit converter для Kotlin Serialization
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
+
 
 
 }

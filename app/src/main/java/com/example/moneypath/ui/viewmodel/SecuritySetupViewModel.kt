@@ -8,8 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.local.EncryptedPrefsHelper
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.initialize.GenerateAndStoreKeysUseCase
-import com.example.moneypath.usecase.initialize.RetrieveAndDecryptDekUseCase
+import com.example.moneypath.domain.usecase.initialize.GenerateAndStoreKeysUseCase
+import com.example.moneypath.domain.usecase.initialize.RetrieveAndDecryptDekUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

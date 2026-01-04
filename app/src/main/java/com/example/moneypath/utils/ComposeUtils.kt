@@ -10,16 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
-import androidx.window.core.layout.WindowSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
-import com.example.moneypath.data.models.TransactionType
+import com.example.moneypath.domain.models.TransactionType
 
 
 object ScreenSize {

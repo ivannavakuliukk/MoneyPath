@@ -1,17 +1,14 @@
 package com.example.moneypath.data.repository
 
-import android.provider.ContactsContract.Data
-import android.util.Base64
 import android.util.Log
-import androidx.compose.animation.core.snap
 import com.example.moneypath.data.models.BudgetPlanDB
-import com.example.moneypath.data.models.BudgetPlanRequest
 import com.example.moneypath.data.models.SettingsDB
-import com.example.moneypath.data.models.Transaction
+import com.example.moneypath.domain.models.Transaction
 import com.example.moneypath.data.models.Wallet
+import com.example.moneypath.data.remote.mappers.toData
+import com.example.moneypath.data.remote.mappers.toDomain
+import com.example.moneypath.data.remote.models.TransactionDto
 import com.example.moneypath.utils.getDayRangeFromUnix
-import com.example.moneypath.utils.unixToDate
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
@@ -20,9 +17,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.getValue
 import kotlinx.coroutines.tasks.await
-import okhttp3.internal.concurrent.Task
 import java.util.UUID
 import javax.inject.Inject
 
@@ -201,9 +196,10 @@ class FirebaseRepository @Inject constructor(
     // Додати транзакцію
     suspend fun addTransaction(transaction: Transaction): Boolean {
         val transactionId = transaction.id.ifEmpty { UUID.randomUUID().toString() }
+        val transactionDto = transaction.toData()
         return try {
             getUserTransactionsRef()?.child(transactionId)
-                ?.setValue(transaction.copy(id = transactionId))?.await()
+                ?.setValue(transactionDto.copy(id = transactionId))?.await()
             true
         } catch (e: Exception) {
             Log.d("Firebase Repository", "Error adding transaction", e)
@@ -241,7 +237,7 @@ class FirebaseRepository @Inject constructor(
     suspend fun getTransactionById(transactionId: String): Transaction? {
         return try {
             val snapshot = getUserTransactionsRef()?.child(transactionId)?.get()?.await()
-            snapshot?.getValue(Transaction::class.java)
+            snapshot?.getValue(TransactionDto::class.java)?.toDomain()
         } catch (e: Exception) {
             Log.d("Firebase Repository", "Can`t get transaction by id.", e)
             null
@@ -273,8 +269,8 @@ class FirebaseRepository @Inject constructor(
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val transactions =
-                    snapshot.children.mapNotNull { it.getValue(Transaction::class.java) }
-                onUpdate(transactions)
+                    snapshot.children.mapNotNull { it.getValue(TransactionDto::class.java) }
+                onUpdate(transactions.toDomain())
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -313,8 +309,8 @@ class FirebaseRepository @Inject constructor(
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val transactions =
-                    snapshot.children.mapNotNull { it.getValue(Transaction::class.java) }
-                onUpdate(transactions)
+                    snapshot.children.mapNotNull { it.getValue(TransactionDto::class.java) }
+                onUpdate(transactions.toDomain())
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -381,12 +377,12 @@ class FirebaseRepository @Inject constructor(
                 ?.endAt(endDate.toDouble())
 
             val snapshot = query?.get()?.await()
-            val transactions = snapshot?.children?.mapNotNull { it.getValue(Transaction::class.java) } ?: emptyList()
+            val transactions = snapshot?.children?.mapNotNull { it.getValue(TransactionDto::class.java) } ?: emptyList()
             // Фільтруємо по walletId, якщо переданий список
             if (!walletIds.isNullOrEmpty()) {
-                transactions.filter { it.walletId in walletIds }
+                transactions.filter { it.walletId in walletIds }.toDomain()
             } else {
-                transactions
+                transactions.toDomain()
             }
         } catch (e: Exception) {
             Log.e("FirebaseRepository", "Error getting transactions", e)
@@ -514,25 +510,6 @@ class FirebaseRepository @Inject constructor(
         }
     }
 
-    suspend fun getSetupFixedCategoriesStable(stable:Boolean): Map<String, Double>? {
-        val pathString = if(stable)"fixed_amount_stable" else "fixed_amount_current"
-        return try {
-            val namesSnapshot = getUserPlanningRef()?.child("set_up")?.child("fixed_categories")?.get()?.await()
-            val categoriesNames = namesSnapshot?.children?.mapNotNull { it.getValue(String::class.java) } ?: emptyList()
-            val amountsSnapshot = getUserPlanningRef()?.child("set_up")?.child(pathString)?.get()?.await()
-            val categoriesAmount = amountsSnapshot?.children?.mapNotNull { it.getValue(Double::class.java) } ?: emptyList()
-            if (categoriesNames.size != categoriesAmount.size) {
-                Log.d("Firebase Repository", "Names and amounts size mismatch")
-                null
-            } else {
-                categoriesNames.zip(categoriesAmount).toMap()
-            }
-        } catch (e: Exception) {
-            Log.d("Firebase Repository", "Error fetching setup", e)
-            null
-        }
-    }
-
     suspend fun getSetup(): SettingsDB? {
         return try {
             val snapshot = getUserPlanningRef()?.child("set_up")?.get()?.await()
@@ -542,17 +519,6 @@ class FirebaseRepository @Inject constructor(
             null
         }
     }
-
-    suspend fun getSetupWallets(): List<String>?{
-        return try{
-            val snapshot = getUserPlanningRef()?.child("set_up")?.child("wallets")?.get()?.await()
-            snapshot?.children?.mapNotNull { it.getValue(String::class.java) }
-        }catch (e:Exception){
-            Log.d("Firebase Repository", "Error fetching setup wallets")
-            null
-        }
-    }
-
 
     suspend fun updateTotalPlan(data: BudgetPlanDB): Boolean{
         return try {
@@ -611,9 +577,6 @@ class FirebaseRepository @Inject constructor(
             emptyList()
         }
     }
-
-
-
 
 
 }

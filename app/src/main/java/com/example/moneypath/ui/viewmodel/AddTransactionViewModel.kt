@@ -7,11 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.models.Categories
 import com.example.moneypath.data.models.Category
-import com.example.moneypath.data.models.Transaction
-import com.example.moneypath.data.models.TransactionType
+import com.example.moneypath.domain.models.Transaction
+import com.example.moneypath.domain.models.TransactionType
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.business.AddTransactionUseCase
+import com.example.moneypath.domain.usecase.business.AddTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -145,7 +145,9 @@ open class AddTransactionViewModel @Inject constructor(
                 date = uiState.date,
                 type = uiState.type,
                 walletId = uiState.walletId,
-                walletIdTo = uiState.walletIdTo
+                walletIdTo = uiState.walletIdTo,
+                amountIv = "",
+                amountEnc = ""
             )
 
             val result = addTransactionUseCase.execute(transaction)

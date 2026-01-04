@@ -1,7 +1,6 @@
 package com.example.moneypath
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -27,15 +26,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
 import com.example.moneypath.data.repository.CryptoRepository
-import com.example.moneypath.data.repository.MonobankRepository
+import com.example.moneypath.domain.repository.MonobankRepository
 import com.example.moneypath.ui.elements.AppNavHost
 import com.example.moneypath.ui.elements.AppNavigationDrawer
 import com.example.moneypath.ui.elements.AppNavigationRail
 import com.example.moneypath.ui.elements.BottomNavigationBar
 import com.example.moneypath.ui.theme.MoneyPathTheme
-import com.example.moneypath.usecase.business.MonobankSyncManager
+import com.example.moneypath.domain.usecase.business.MonobankSyncManager
 import com.example.moneypath.utils.ScreenSize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay

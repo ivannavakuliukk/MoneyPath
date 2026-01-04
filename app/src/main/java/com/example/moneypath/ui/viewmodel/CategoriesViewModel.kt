@@ -8,14 +8,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.models.Categories
 import com.example.moneypath.data.models.PieSlice
-import com.example.moneypath.data.models.Transaction
+import com.example.moneypath.domain.models.Transaction
 import com.example.moneypath.data.models.findCategoryById
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.business.GetTransactionsByCategories
+import com.example.moneypath.domain.usecase.business.GetTransactionsByCategories
 import com.example.moneypath.utils.getMonthBounds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel

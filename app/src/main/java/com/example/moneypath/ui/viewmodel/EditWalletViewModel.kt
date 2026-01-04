@@ -2,8 +2,8 @@ package com.example.moneypath.ui.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.crypto.AddOrUpdateWalletUseCase
-import com.example.moneypath.usecase.crypto.GetWalletByIdUseCase
+import com.example.moneypath.domain.usecase.crypto.AddOrUpdateWalletUseCase
+import com.example.moneypath.domain.usecase.crypto.GetWalletByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

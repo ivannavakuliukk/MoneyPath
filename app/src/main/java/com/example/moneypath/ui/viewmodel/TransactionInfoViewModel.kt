@@ -6,10 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneypath.data.models.Transaction
+import com.example.moneypath.domain.models.Transaction
 import com.example.moneypath.data.repository.FirebaseRepository
-import com.example.moneypath.usecase.business.DeleteTransactionUseCase
-import com.example.moneypath.usecase.crypto.GetTransactionByIdUseCase
+import com.example.moneypath.domain.models.TransactionType
+import com.example.moneypath.domain.usecase.business.DeleteTransactionUseCase
+import com.example.moneypath.domain.usecase.crypto.GetTransactionByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,7 +23,18 @@ class TransactionInfoViewModel @Inject constructor(
 ): ViewModel(){
 
     data class UiState(
-        val transaction: Transaction = Transaction(),
+        val transaction: Transaction = Transaction(
+            id = "",
+            date = 0L,
+            categoryId = "",
+            amount = 0.0,
+            description = "",
+            type = TransactionType.Income,
+            walletId = "",
+            walletIdTo = "",
+            amountEnc = "",
+            amountIv = "",
+        ),
         val walletName: String = "",
         val walletToName: String = "",
 

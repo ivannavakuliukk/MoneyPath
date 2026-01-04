@@ -1,16 +1,6 @@
 package com.example.moneypath.ui.screens
 
-import android.annotation.SuppressLint
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,25 +33,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
@@ -80,27 +63,22 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.motionEventSpy
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
-import androidx.window.embedding.EmbeddingBounds
 import coil.compose.rememberAsyncImagePainter
-import coil.size.Dimension
 import com.example.moneypath.LocalAppWindowInfo
 import com.example.moneypath.R
-import com.example.moneypath.data.models.Transaction
-import com.example.moneypath.data.models.TransactionType
+import com.example.moneypath.domain.models.Transaction
+import com.example.moneypath.domain.models.TransactionType
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
@@ -124,7 +102,6 @@ import com.gigamole.composeshadowsplus.common.shadowsPlus
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 import java.util.Calendar
 import kotlin.math.abs
-import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 
@@ -829,7 +806,7 @@ fun TransactionRow(
     onClick: () -> Unit
 ){
     val selectedCategory = findCategoryById(transaction.categoryId)
-    val selectedWallet = wallets.first { it.id == transaction.walletId }
+    val selectedWallet = wallets.firstOrNull { it.id == transaction.walletId }
     val selectedWalletTo = wallets.firstOrNull{it.id == transaction.walletIdTo}
     Column {
         Row(
@@ -865,7 +842,7 @@ fun TransactionRow(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = selectedWallet.name +
+                    text = selectedWallet?.name +
                             if (transaction.description.isNotEmpty() && transaction.type != TransactionType.Transfer) {
                                 ", " + transaction.description
                             } else if (transaction.type == TransactionType.Transfer && selectedWalletTo != null) {
@@ -1086,90 +1063,90 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
 }
 
 
-fun previewUiStateExample(): MainScreenViewModel.UiState {
-    val transactions = listOf(
-        Transaction(
-            id = "1",
-            date = 1766851200,
-            amount = 100.0,
-            type = TransactionType.Expense,
-            categoryId = "food",
-            walletId = "1"
-        )
-    )
-    val wallets = listOf(
-        Wallet(
-            id = "1",
-            name = "Cash",
-            type = WalletType.Cash,
-            balance = 1000.0
-        )
-    )
-    return MainScreenViewModel.UiState(
-        wallets = wallets,
-        transactions = transactions
-    )
-}
-
-
-@Preview(showSystemUi = true, showBackground = true)
-@Composable
-private fun MainScreenCompact() {
-    val state = previewUiStateExample()
-    MoneyPathTheme {
-        Scaffold(Modifier.fillMaxSize(),
-            bottomBar = { StatelessBottomBar("mainscreen") { } }
-        ) {innerPadding->
-            Spacer(Modifier.padding(innerPadding))
-            MainScreenStateless(
-                state = state,
-                snackBarHostState = remember { SnackbarHostState() }
-            ) { }
-        }
-    }
-}
-
-@Preview(showSystemUi = true, showBackground = true,
-    device = "spec:width=1280dp,height=800dp,dpi=240,orientation=portrait"
-)
-@Composable
-private fun MainScreenMedium() {
-    val state = previewUiStateExample()
-    MoneyPathTheme {
-        Scaffold(Modifier.fillMaxSize()
-        ) {innerPadding->
-            Row(Modifier.fillMaxSize()) {
-                Spacer(Modifier.padding(innerPadding))
-                StatelessNavigationRail("mainscreen") { }
-                MainScreenStateless(
-                    state = state,
-                    snackBarHostState = remember { SnackbarHostState() }
-                ) { }
-            }
-        }
-    }
-}
-
-@SuppressLint("SuspiciousIndentation")
-@Preview(showSystemUi = true, showBackground = true,
-    device = "spec:width=1280dp,height=800dp,dpi=240"
-)
-@Composable
-private fun MainScreenExpanded() {
-    val state = previewUiStateExample()
-        MoneyPathTheme {
-            Scaffold(
-                Modifier.fillMaxSize()
-            ) { innerPadding ->
-                Row(Modifier.fillMaxSize()) {
-                    Spacer(Modifier.padding(innerPadding))
-                    StatelessNavigationDrawer(modifier = Modifier.weight(0.25f), "mainscreen") { }
-                    MainScreenStateless(
-                        modifier = Modifier.weight(0.75f),
-                        state = state,
-                        snackBarHostState = remember { SnackbarHostState() }
-                    ) { }
-                }
-            }
-        }
-}
+//fun previewUiStateExample(): MainScreenViewModel.UiState {
+//    val transactions = listOf(
+//        Transaction(
+//            id = "1",
+//            date = 1766851200,
+//            amount = 100.0,
+//            type = TransactionType.Expense,
+//            categoryId = "food",
+//            walletId = "1"
+//        )
+//    )
+//    val wallets = listOf(
+//        Wallet(
+//            id = "1",
+//            name = "Cash",
+//            type = WalletType.Cash,
+//            balance = 1000.0
+//        )
+//    )
+//    return MainScreenViewModel.UiState(
+//        wallets = wallets,
+//        transactions = transactions
+//    )
+//}
+//
+//
+//@Preview(showSystemUi = true, showBackground = true)
+//@Composable
+//private fun MainScreenCompact() {
+//    val state = previewUiStateExample()
+//    MoneyPathTheme {
+//        Scaffold(Modifier.fillMaxSize(),
+//            bottomBar = { StatelessBottomBar("mainscreen") { } }
+//        ) {innerPadding->
+//            Spacer(Modifier.padding(innerPadding))
+//            MainScreenStateless(
+//                state = state,
+//                snackBarHostState = remember { SnackbarHostState() }
+//            ) { }
+//        }
+//    }
+//}
+//
+//@Preview(showSystemUi = true, showBackground = true,
+//    device = "spec:width=1280dp,height=800dp,dpi=240,orientation=portrait"
+//)
+//@Composable
+//private fun MainScreenMedium() {
+//    val state = previewUiStateExample()
+//    MoneyPathTheme {
+//        Scaffold(Modifier.fillMaxSize()
+//        ) {innerPadding->
+//            Row(Modifier.fillMaxSize()) {
+//                Spacer(Modifier.padding(innerPadding))
+//                StatelessNavigationRail("mainscreen") { }
+//                MainScreenStateless(
+//                    state = state,
+//                    snackBarHostState = remember { SnackbarHostState() }
+//                ) { }
+//            }
+//        }
+//    }
+//}
+//
+//@SuppressLint("SuspiciousIndentation")
+//@Preview(showSystemUi = true, showBackground = true,
+//    device = "spec:width=1280dp,height=800dp,dpi=240"
+//)
+//@Composable
+//private fun MainScreenExpanded() {
+//    val state = previewUiStateExample()
+//        MoneyPathTheme {
+//            Scaffold(
+//                Modifier.fillMaxSize()
+//            ) { innerPadding ->
+//                Row(Modifier.fillMaxSize()) {
+//                    Spacer(Modifier.padding(innerPadding))
+//                    StatelessNavigationDrawer(modifier = Modifier.weight(0.25f), "mainscreen") { }
+//                    MainScreenStateless(
+//                        modifier = Modifier.weight(0.75f),
+//                        state = state,
+//                        snackBarHostState = remember { SnackbarHostState() }
+//                    ) { }
+//                }
+//            }
+//        }
+//}

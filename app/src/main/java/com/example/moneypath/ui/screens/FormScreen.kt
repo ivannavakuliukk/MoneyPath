@@ -1,6 +1,7 @@
 package com.example.moneypath.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,14 +25,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSeparator.key
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -48,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeCompilerApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,10 +96,9 @@ import com.example.moneypath.utils.monthWordForm
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType
 import com.gigamole.composeshadowsplus.common.shadowsPlus
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
+import sh.calvin.reorderable.ReorderableColumn
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -468,10 +472,13 @@ fun Step5Screen(categoriesNames: List<String>, bounds: List<Pair<Int, Int>>,
     }
 }
 
-// Екран 6 - Пріоритети
 @SuppressLint("MutableCollectionMutableState")
 @Composable
-fun Step6Screen(categoriesNames: List<String>, newOrderedCategories: List<String>, onReorder: (List<String>)-> Unit) {
+fun Step6Screen(
+    categoriesNames: List<String>,
+    newOrderedCategories: List<String>,
+    onReorder: (List<String>) -> Unit
+) {
     val categoryList = remember {
         mutableStateListOf<Category>().apply {
             val base = if (newOrderedCategories.size != categoriesNames.size) {
@@ -490,23 +497,24 @@ fun Step6Screen(categoriesNames: List<String>, newOrderedCategories: List<String
     FormContainer {
         Title("Розставте пріоритети")
         TitleRow("Обирайте що для вас важливіше: чим більший пріоритет тим більше коштів отримає категорія.")
-        val state = rememberReorderableLazyListState(onMove = { from, to ->
+
+        val lazyListState = rememberLazyListState()
+        val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
             categoryList.apply {
                 add(to.index, removeAt(from.index))
             }
             onReorder(categoryList.map { it.name })
-        })
+        }
 
         LazyColumn(
-            state = state.listState,
+            state = lazyListState,
             modifier = Modifier
                 .wrapContentHeight()
-                .reorderable(state)
-                .detectReorderAfterLongPress(state)
-                .padding(horizontal = 15.dp).padding(bottom = 15.dp),
+                .padding(horizontal = 15.dp)
+                .padding(bottom = 15.dp),
         ) {
             items(categoryList, key = { it.name }) { category ->
-                ReorderableItem(state, key = category.name) {isDragging ->
+                ReorderableItem(reorderableLazyListState, key = category.name) { isDragging ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -523,7 +531,8 @@ fun Step6Screen(categoriesNames: List<String>, newOrderedCategories: List<String
                             )
                             .background(
                                 if (isDragging) MaterialTheme.colorScheme.background.copy(alpha = 0.2f)
-                                else MaterialTheme.colorScheme.primary)
+                                else MaterialTheme.colorScheme.primary
+                            )
                             .padding(horizontal = 12.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -541,18 +550,24 @@ fun Step6Screen(categoriesNames: List<String>, newOrderedCategories: List<String
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Icon(
-                            painter = painterResource(R.drawable.drag),
-                            contentDescription = "Move",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                        )
+                        IconButton(
+                            onClick = {},
+                            modifier = Modifier.draggableHandle()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.drag),
+                                contentDescription = "Move",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
 
 // Екран 7 - Фіксовані витрати
 @Composable

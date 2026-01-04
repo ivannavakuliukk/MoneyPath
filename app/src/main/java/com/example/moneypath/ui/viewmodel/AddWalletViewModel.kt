@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
-import com.example.moneypath.usecase.crypto.AddOrUpdateWalletUseCase
+import com.example.moneypath.domain.usecase.crypto.AddOrUpdateWalletUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
