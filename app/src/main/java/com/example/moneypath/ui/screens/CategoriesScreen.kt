@@ -1,6 +1,5 @@
 package com.example.moneypath.ui.screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,36 +12,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.WavyProgressIndicatorDefaults
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -54,45 +43,43 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneypath.R
 import com.example.moneypath.data.models.PieSlice
 import com.example.moneypath.data.models.findCategoryById
-import com.example.moneypath.ui.elements.BottomNavigationBar
+import com.example.moneypath.domain.models.Transaction
+import com.example.moneypath.ui.elements.CategoriesTopApp
 import com.example.moneypath.ui.elements.CategoryDonutChart
+import com.example.moneypath.ui.elements.ContainerForDataBox
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBarNoIcon
 import com.example.moneypath.ui.elements.PagerIndicator
+import com.example.moneypath.ui.elements.ScrollToTopButton
+import com.example.moneypath.ui.preview.CategoriesBoxProvider
+import com.example.moneypath.ui.preview.DonutChartParamsProvider
+import com.example.moneypath.ui.preview.TransactionInfo
+import com.example.moneypath.ui.preview.TransactionInfoProvider
+import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.ui.viewmodel.CategoriesViewModel
 import com.example.moneypath.utils.ScreenSize
-import com.example.moneypath.utils.formatMonthYear
-import com.example.moneypath.utils.getMonthBounds
+import com.example.moneypath.utils.cardShadow
 import com.example.moneypath.utils.transactionWordForm
 import com.gigamole.composeshadowsplus.common.ShadowsPlusType
 import com.gigamole.composeshadowsplus.common.shadowsPlus
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
-import java.util.Calendar
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.roundToInt
 
 @Composable
@@ -101,7 +88,6 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
     val snackBarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
-    val firstVisibleOffset by remember { derivedStateOf { listState.firstVisibleItemScrollOffset } }
     val columnState = rememberLazyListState()
     val showScrollToTopButton by remember {
         derivedStateOf {
@@ -125,8 +111,10 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
         Scaffold(
             topBar = {
                 if (firstVisibleIndex == 0 ) {
-                    CategoriesTopApp(state) {startDate,
-                                             endDate ->viewModel.onDateRangeSelected(startDate, endDate)}
+                    CategoriesTopApp(state.dates) { startDate,
+                                                    endDate ->
+                        viewModel.onDateRangeSelected(startDate, endDate)
+                    }
                 } else {
                     MyTopAppBarNoIcon("План витрат", MaterialTheme.colorScheme.tertiaryContainer)
                 }
@@ -192,13 +180,15 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
                         }
                     }
                     item{
-                       ButtonToFormScreen(state, navController, index = firstVisibleIndex)
+                       ButtonToFormScreen(
+                           index = firstVisibleIndex,
+                           isPlanned = state.isPlanned) {navController.navigate("form")}
                     }
                     item{
-                        IncomeExpensesBox(state)
+                        IncomeExpensesBox(state.incomeAmount, state.expensesAmount)
                     }
                     item {
-                        CategoriesBox(state)
+                        CategoriesBox(state.transactionList, state.planAllocation, state.isPlanned)
                     }
                 }
             }
@@ -206,28 +196,9 @@ fun CategoriesScreen(navController: NavController, viewModel: CategoriesViewMode
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun ScrollToTopButton(modifier: Modifier = Modifier, onClick: ()-> Unit) {
-    IconButton(
-        onClick = onClick,
-        shape = IconButtonDefaults.mediumRoundShape,
-        colors = IconButtonDefaults.iconButtonColors(
-            containerColor = MaterialTheme.colorScheme.tertiary
-        )
-    ) {
-        Icon(
-            imageVector = ImageVector.vectorResource(R.drawable.arrow_appward),
-            contentDescription = null,
-            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
-            tint = MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
 @Composable
 fun CategoriesPieChart(chartData: List<PieSlice>, index: Int) {
-    Box(Modifier.width(ScreenSize.width)) {
+    Box(Modifier.fillMaxWidth()) {
         val bottomPadding = if (chartData.isNotEmpty()) 65.dp else 25.dp
         val topPadding = if(chartData.isNotEmpty()) 60.dp else 30.dp
         CategoryDonutChart(
@@ -244,29 +215,12 @@ fun CategoriesPieChart(chartData: List<PieSlice>, index: Int) {
 }
 
 @Composable
-fun CategoriesBox(state: CategoriesViewModel.UiState) {
-    Column(
-        modifier = Modifier
-            .padding(horizontal = ScreenSize.width * 0.055f)
-            .padding(bottom = 30.dp, top = 15.dp)
-            .shadowsPlus(
-                type = ShadowsPlusType.SoftLayer,
-                color = Color.Black.copy(alpha = 0.25f),
-                radius = 4.dp,
-                offset = DpOffset(x = 2.dp, y = 2.dp),
-                spread = 1.dp,
-                shape = RoundedCornerShape(15.dp),
-                isAlphaContentClip = true
-            )
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(horizontal = ScreenSize.width * 0.035f)
-            .padding(top = 0.dp, bottom = ScreenSize.width * 0.05f)
-    ) {
+fun CategoriesBox(transactionList: Map<String, List<Transaction>>, planAllocation: Map<String, Double>, isPlanned: Boolean) {
+    ContainerForDataBox(showTitle = false) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(ScreenSize.height * 0.065f)
+                .height((ScreenSize.height * 0.065f).coerceAtLeast(40.dp))
                 .padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
@@ -276,10 +230,10 @@ fun CategoriesBox(state: CategoriesViewModel.UiState) {
                 style = MaterialTheme.typography.headlineSmall,
             )
         }
-        if(state.transactionList.isNotEmpty()) {
-            val planAllocation = state.planAllocation
+        if(transactionList.isNotEmpty()) {
+            val planAllocation = planAllocation
             // Створюємо відсортований список категорій за сумою amount
-            val sortedTransactionList = state.transactionList
+            val sortedTransactionList = transactionList
                 .entries
                 .sortedByDescending { (_, transactions) ->
                     transactions.sumOf { abs(it.amount) }
@@ -292,7 +246,7 @@ fun CategoriesBox(state: CategoriesViewModel.UiState) {
                     name = category.name,
                     amount = transactions.sumOf { abs(it.amount) },
                     transactionSize = transactions.size,
-                    planAmount = if (state.isPlanned) planAllocation[categoryId] ?: 0.0 else null
+                    planAmount = if (isPlanned) planAllocation[categoryId] ?: 0.0 else null
                 )
             }
             Line()
@@ -301,7 +255,7 @@ fun CategoriesBox(state: CategoriesViewModel.UiState) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(ScreenSize.height * 0.11f),
+                    .height((ScreenSize.height * 0.11f).coerceAtLeast(75.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -312,12 +266,13 @@ fun CategoriesBox(state: CategoriesViewModel.UiState) {
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+            Line()
         }
     }
 }
 
 @Composable
-fun ButtonToFormScreen(state: CategoriesViewModel.UiState, navController: NavController, index: Int){
+fun ButtonToFormScreen(isPlanned: Boolean, index: Int, onClick:()->Unit){
     // Кнопка до форми для плану
     Box(
         modifier = Modifier
@@ -340,28 +295,26 @@ fun ButtonToFormScreen(state: CategoriesViewModel.UiState, navController: NavCon
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = ScreenSize.width * 0.055f, vertical = 7.dp)
-                .wrapContentHeight()
-                .shadowsPlus(
-                    type = ShadowsPlusType.SoftLayer,
-                    color = Color.Black.copy(alpha = 0.25f),
-                    radius = 4.dp,
-                    offset = DpOffset(x = 2.dp, y = 2.dp),
-                    spread = 1.dp,
-                    shape = RoundedCornerShape(15.dp),
-                    isAlphaContentClip = true
+                .padding(
+                    horizontal = (ScreenSize.width * 0.055f).coerceAtLeast(15.dp),
+                    vertical = 7.dp
                 )
+                .wrapContentHeight()
+                .cardShadow()
                 .clip(RoundedCornerShape(15.dp))
                 .background(MaterialTheme.colorScheme.primary)
-                .padding(horizontal = ScreenSize.width * 0.035f, vertical = 5.dp)
+                .padding(
+                    horizontal = (ScreenSize.width * 0.035f).coerceAtLeast(10.dp),
+                    vertical = 5.dp
+                )
                 .clickable {
-                    navController.navigate("form")
+                    onClick()
                 }
         ){
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = if(state.isPlanned) "Змінити план бюджету" else "Розрахувати план бюджету",
+                    text = if(isPlanned) "Змінити план бюджету" else "Розрахувати план бюджету",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Image(
@@ -377,25 +330,16 @@ fun ButtonToFormScreen(state: CategoriesViewModel.UiState, navController: NavCon
 }
 
 @Composable
-fun IncomeExpensesBox(state: CategoriesViewModel.UiState){
+fun IncomeExpensesBox(incomeAmount: Double, expensesAmount: Double){
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = ScreenSize.width * 0.055f, vertical = 7.dp)
+            .padding(horizontal = (ScreenSize.width * 0.055f).coerceAtLeast(15.dp), vertical = 7.dp)
             .wrapContentHeight()
-            .shadowsPlus(
-                type = ShadowsPlusType.SoftLayer,
-                color = Color.Black.copy(alpha = 0.25f),
-                radius = 4.dp,
-                offset = DpOffset(x = 2.dp, y = 2.dp),
-                spread = 1.dp,
-                shape = RoundedCornerShape(15.dp),
-                isAlphaContentClip = true
-            )
+            .cardShadow()
             .clip(RoundedCornerShape(15.dp))
             .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = ScreenSize.width * 0.035f, vertical = 5.dp)
-
+            .padding(horizontal = (ScreenSize.width * 0.035f).coerceAtLeast(10.dp), vertical = 5.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -410,7 +354,7 @@ fun IncomeExpensesBox(state: CategoriesViewModel.UiState){
                 color = MaterialTheme.colorScheme.onTertiary
             )
             Text(
-                text = state.incomeAmount.toString() + "₴",
+                text = incomeAmount.toString() + "₴",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onTertiary
             )
@@ -429,7 +373,7 @@ fun IncomeExpensesBox(state: CategoriesViewModel.UiState){
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = state.expensesAmount.toString() + "₴",
+                text = expensesAmount.toString() + "₴",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -557,95 +501,74 @@ fun PlannedCategoryLine(
     }
 }
 
-// Top bar з якого відкривається docked date picker
-@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, widthDp = 360)
 @Composable
-fun CategoriesTopApp(state: CategoriesViewModel.UiState, onDateRangeSelected: (Long, Long)-> Unit){
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(ScreenSize.height * 0.097f)
-            .background(MaterialTheme.colorScheme.background),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        var showDatePickerDocked by remember { mutableStateOf(false) }
-        val (startDateSec, endDateSec) = state.dates ?: getMonthBounds()
-        val todayDate = Calendar.getInstance()
-        // Визначаєм можливі дати - не більше за сьогодні
-        val selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis <= todayDate.timeInMillis
-            }
-        }
-        val datePickerState = rememberDatePickerState(selectableDates = selectableDates, initialSelectedDateMillis = startDateSec*1000)
-        // відстежуємо натискання користувачем на дату
-        LaunchedEffect(datePickerState.selectedDateMillis) {
-            if(showDatePickerDocked && datePickerState.selectedDateMillis!=null) {
-                val selectedRangeInMillis =
-                    getMonthBounds(datePickerState.selectedDateMillis ?: 0L)
-                onDateRangeSelected(
-                    selectedRangeInMillis.first,
-                    selectedRangeInMillis.second
-                )
-                showDatePickerDocked = false
-            }
-        }
-        Text(
-            text = formatMonthYear(startDateSec, endDateSec),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .wrapContentWidth()
-                .clickable { showDatePickerDocked = !showDatePickerDocked }
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.calendar),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .fillMaxHeight(0.4f)
-                    .padding(start = 5.dp)
-                    .align(Alignment.Center)
-            )
-        }
-        if(showDatePickerDocked){
-            Popup(onDismissRequest = {showDatePickerDocked = false}, alignment = Alignment.TopStart)
-            {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = ScreenSize.height * 0.07f)
-                        .wrapContentHeight()
-                        .background(Color.Transparent)
-                        .scale(0.9f)
-                        .shadow(5.dp)
-                ){
-                    Column {
-                        DatePicker(
-                            state = datePickerState,
-                            showModeToggle = false,
-                            title = null,
-                            headline = null,
-                            colors = DatePickerDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                weekdayContentColor = MaterialTheme.colorScheme.onPrimary,
-                                dayContentColor = MaterialTheme.colorScheme.secondary,
-                                disabledDayContentColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                                selectedDayContentColor = MaterialTheme.colorScheme.background,
-                                selectedDayContainerColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.2f),
-                                todayContentColor = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        )
-                    }
-                }
-            }
+private fun CategoryPieChartPreview(
+    @PreviewParameter(DonutChartParamsProvider::class)
+    data: Pair<List<PieSlice>, Int>
+) {
+    MoneyPathTheme {
+        Box(Modifier
+            .wrapContentSize()
+            .background(
+                if (data.second == 0) MaterialTheme.colorScheme.background else Color(0xFF4FC3F7)
+            )) {
+            CategoriesPieChart(data.first, data.second)
         }
     }
 }
 
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun ButtonToFormPreview() {
+    MoneyPathTheme {
+        ButtonToFormScreen(
+            true,
+            0
+        ) { }
+    }
+}
 
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun IncomeExpensesBoxPreview() {
+    MoneyPathTheme {
+        IncomeExpensesBox(
+            incomeAmount = 10000.0,
+            expensesAmount = 524.5
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun CategoryLinePreview(
+    @PreviewParameter(TransactionInfoProvider::class)
+    info: TransactionInfo
+) {
+    MoneyPathTheme {
+        PlannedCategoryLine(
+            iconRes = info.icon,
+            name = info.name,
+            amount = info.amount,
+            planAmount = info.planAmount,
+            transactionSize = info.transactionSize,
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun CategoriesBoxPreview(
+    @PreviewParameter(CategoriesBoxProvider::class)
+    data: Triple<Map<String, List<Transaction>>, Map<String, Double>, Boolean>
+) {
+    MoneyPathTheme {
+        CategoriesBox(
+            data.first,
+            data.second,
+            data.third
+        )
+    }
+}
 

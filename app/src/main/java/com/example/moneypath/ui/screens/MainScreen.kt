@@ -1,6 +1,5 @@
 package com.example.moneypath.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,24 +27,18 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButtonMenu
-import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleFloatingActionButton
-import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -62,19 +54,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.window.core.layout.WindowSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
-import coil.compose.rememberAsyncImagePainter
 import com.example.moneypath.LocalAppWindowInfo
 import com.example.moneypath.R
 import com.example.moneypath.domain.models.Transaction
@@ -83,15 +73,22 @@ import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletSource
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.data.models.findCategoryById
-import com.example.moneypath.ui.elements.AppDatePickerDialog
-import com.example.moneypath.ui.elements.AppDialog
+import com.example.moneypath.ui.elements.dialogs.AppDatePickerDialog
+import com.example.moneypath.ui.elements.dialogs.AppImageDialog
 import com.example.moneypath.ui.elements.AppSnackBar
 import com.example.moneypath.ui.elements.InfiniteLinearWavyIndicator
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.PagerIndicator
-import com.example.moneypath.ui.elements.StatelessBottomBar
-import com.example.moneypath.ui.elements.StatelessNavigationDrawer
-import com.example.moneypath.ui.elements.StatelessNavigationRail
+import com.example.moneypath.ui.elements.navigation.StatelessBottomBar
+import com.example.moneypath.ui.elements.navigation.StatelessNavigationDrawer
+import com.example.moneypath.ui.elements.navigation.StatelessNavigationRail
+import com.example.moneypath.ui.elements.AppFabMenu
+import com.example.moneypath.ui.elements.MainTopAppBar
+import com.example.moneypath.ui.preview.GoalAmountProvider
+import com.example.moneypath.ui.preview.GoalPreviewParams
+import com.example.moneypath.ui.preview.WalletsAndTransactionProvider
+import com.example.moneypath.ui.preview.WalletsAndTransactionsProvider
+import com.example.moneypath.ui.preview.WalletsProvider
 import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.ui.viewmodel.MainScreenViewModel
 import com.example.moneypath.utils.Dimensions
@@ -184,9 +181,12 @@ fun MainScreenStateless(
                 })
             },
             floatingActionButton = {
-                AppFabMenu(dimensions=dimensions,
-                    onAddWalletClick =  onWalletAddClick, onAddTransactionClick = onAddTransactionClick,
-                    onAddMonoClick = onMonoAdd)
+                AppFabMenu(
+                    dimensions = dimensions,
+                    onAddWalletClick = onWalletAddClick,
+                    onAddTransactionClick = onAddTransactionClick,
+                    onAddMonoClick = onMonoAdd
+                )
 
             }, floatingActionButtonPosition = FabPosition.End
         )
@@ -224,127 +224,6 @@ fun MainScreenStateless(
 }
 
 
-data class FabAction(
-    val label: String,
-    val icon: ImageVector,
-    val onClick: () -> Unit
-)
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun AppFabMenu(modifier: Modifier = Modifier, dimensions: Dimensions,
-               onAddWalletClick: ()-> Unit,
-               onAddTransactionClick: ()-> Unit,
-               onAddMonoClick: ()-> Unit) {
-    var expanded by remember {mutableStateOf(false)}
-    val actions = listOf(
-        FabAction("Додати гаманець", ImageVector.vectorResource(R.drawable.wallet_icon), onAddWalletClick),
-        FabAction("Додати гаманець mono", ImageVector.vectorResource(R.drawable.mono_wallet_icon), onAddMonoClick),
-        FabAction("Додати транзакцію", ImageVector.vectorResource(R.drawable.transaction_icon), onAddTransactionClick))
-    FloatingActionButtonMenu(
-        expanded = expanded,
-        button = {
-            ToggleFloatingActionButton(
-                checked = expanded,
-                onCheckedChange = {expanded = it},
-                containerColor = ToggleFloatingActionButtonDefaults.containerColor(
-                    initialColor = MaterialTheme.colorScheme.tertiary,
-                    finalColor = Color(0xFF204FF8)
-                ),
-                containerSize = {dimensions.buttonSize}
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(
-                        if(expanded) R.drawable.close_icon else R.drawable.add_icon,
-                    ),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(dimensions.iconSize*0.9f),
-                    contentDescription = null
-                )
-            }
-        }
-    ) {
-        actions.forEach { item->
-            FloatingActionButtonMenuItem(
-                onClick = {item.onClick()},
-                text = {Text(item.label, style = MaterialTheme.typography.bodyMedium) },
-                icon = {Icon(imageVector = item.icon, contentDescription = null, modifier = Modifier.size(dimensions.iconSize*0.9f))},
-                modifier = Modifier.height(dimensions.buttonSize),
-                contentColor = MaterialTheme.colorScheme.primary,
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer
-            )
-        }
-    }
-}
-
-
-
-// Верхня панель
-@Composable
-fun MainTopAppBar(userName: String, url: Uri?, dimensions: Dimensions) {
-    val sizeClass = LocalAppWindowInfo.current.windowSizeClass.windowWidthSizeClass
-    Row(
-        modifier = Modifier
-            .wrapContentHeight()
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(modifier = Modifier.weight(0.055f))
-        if (url != null) {
-            Image(
-                painter = rememberAsyncImagePainter(url),
-                contentDescription = null,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .aspectRatio(1f)
-                    .weight(if (sizeClass == WindowWidthSizeClass.EXPANDED) 0.075f else 0.097f)
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .aspectRatio(1f)
-                    .weight(0.097f)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = (userName.firstOrNull()?.uppercaseChar() ?: "?").toString(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White
-                )
-            }
-        }
-        Spacer(modifier = Modifier.weight(0.03f))
-        Column(modifier = Modifier.weight(0.72f)) {
-            Text(
-                text = userName,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1
-            )
-            Text(
-                text = "Привіт!\uD83D\uDC4B Раді Вас бачити!",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        IconButton(
-            onClick = {},
-            modifier = Modifier
-                .weight(0.06f)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.bell),
-                contentDescription = null,
-            )
-        }
-        Spacer(modifier = Modifier.weight(0.055f))
-    }
-
-}
-
-
 // Гаманці
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -360,6 +239,7 @@ fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, o
     if(firstVisibleIndex == 0 && firstVisibleOffset > 90){ pageIndex = 1 }
     if(firstVisibleIndex == 1 && firstVisibleOffset > 120){ pageIndex = 2 }
     if(firstVisibleIndex == 2 && firstVisibleOffset > 120){ pageIndex = 3 }
+    if(firstVisibleIndex == 3 && firstVisibleOffset > 100){ pageIndex = 4 }
     val totalPages = when(wallets.size ){
         2->2
         3->3
@@ -381,7 +261,7 @@ fun WalletsLazyRowWithIndicator(dimensions: Dimensions, wallets: List<Wallet>, o
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.horizontalPadding),
-                contentPadding = PaddingValues(horizontal = ScreenSize.width * 0.05f),
+                contentPadding = PaddingValues(horizontal = (ScreenSize.width * 0.05f).coerceAtLeast(16.dp)),
                 state = listState
             ) {
                 items(wallets) { wallet ->
@@ -624,7 +504,7 @@ fun TransactionBox(
 ){
     Column(
         modifier = Modifier
-            .padding(horizontal = ScreenSize.width * 0.055f)
+            .padding(horizontal = (ScreenSize.width * 0.055f).coerceAtLeast(10.dp))
             .padding(bottom = dimensions.verticalPadding * 2, top = dimensions.horizontalPadding)
             .shadowsPlus(
                 type = ShadowsPlusType.SoftLayer,
@@ -742,7 +622,6 @@ fun TransactionTitle(dimensions: Dimensions,modifier: Modifier = Modifier, date:
         )
         Box(
             modifier = Modifier
-                .fillMaxHeight()
                 .wrapContentWidth()
                 .clickable { onClick() },
             contentAlignment = Alignment.BottomEnd
@@ -772,7 +651,7 @@ fun TransactionTitle(dimensions: Dimensions,modifier: Modifier = Modifier, date:
 fun TransactionIndicator(modifier: Modifier = Modifier, dimensions: Dimensions) {
     Box(modifier = modifier
         .fillMaxWidth()
-        .height(ScreenSize.height * 0.11f),
+        .height((ScreenSize.height * 0.11f).coerceAtLeast(70.dp)),
         contentAlignment = Alignment.TopCenter) {
         InfiniteLinearWavyIndicator(Modifier.height(dimensions.progressBarHeight))
     }
@@ -783,7 +662,7 @@ fun TransactionEmptyBox(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(ScreenSize.height * 0.11f),
+            .height((ScreenSize.height * 0.11f).coerceAtLeast(75.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -904,8 +783,8 @@ fun GoalBox(dimensions: Dimensions, goalName: String?, goalTransactionsAmount: D
                 .fillMaxWidth()
                 .padding(
                     horizontal = if (dimensions.screenSize == "Expanded") {
-                        ScreenSize.width * 0.1f
-                    } else ScreenSize.width * 0.055f,
+                        (ScreenSize.width * 0.1f).coerceAtLeast(16.dp)
+                    } else (ScreenSize.width * 0.055f).coerceAtLeast(16.dp),
                     vertical = 7.dp
                 )
                 .wrapContentHeight()
@@ -920,7 +799,10 @@ fun GoalBox(dimensions: Dimensions, goalName: String?, goalTransactionsAmount: D
                 )
                 .clip(RoundedCornerShape(dimensions.cornerRadius))
                 .background(MaterialTheme.colorScheme.primary)
-                .padding(horizontal = ScreenSize.width * 0.035f, vertical = 5.dp)
+                .padding(
+                    horizontal = (ScreenSize.width * 0.035f).coerceAtLeast(10.dp),
+                    vertical = 5.dp
+                )
 
         ){
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
@@ -943,7 +825,7 @@ fun GoalBox(dimensions: Dimensions, goalName: String?, goalTransactionsAmount: D
                 val planAmount = goalAmount
                 val amount = goalTransactionsAmount?.let { abs(it) }
                 var progress: Float = 0F
-                var color = MaterialTheme.colorScheme.background
+                var color by remember { mutableStateOf(Color(0xFF55D6BE)) }
                 if (amount != null) {
                     when {
                         planAmount?.toDouble() == 0.0 && amount == 0.0 -> {
@@ -963,7 +845,7 @@ fun GoalBox(dimensions: Dimensions, goalName: String?, goalTransactionsAmount: D
                     }
                 }
                 LinearProgressIndicator(
-                    progress = { progress },
+                    progress = {progress},
                     modifier = Modifier
                         .weight(0.8f)
                         .padding(end = 10.dp)
@@ -1004,7 +886,7 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
         }
     }
     if(showGoalReachedDialog){
-        AppDialog(
+        AppImageDialog(
             imageRes = R.drawable.happy_bunny,
             title = "Вітаємо!!",
             message = "Ви виконали поставлену ціль, хоч час ще залишився!\n Хочете створити новий план чи залишитись на поточному?",
@@ -1029,7 +911,7 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
         }
     }
     if(showTermReachedDialog){
-        AppDialog(
+        AppImageDialog(
             imageRes = R.drawable.sad_cat,
             title = "На жаль...",
             message = "Ви не виконали поставлену ціль, а час плану вже минув. Давайте створимо новий?",
@@ -1045,7 +927,7 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
         )
     }
     if(showTermGoalReachedDialog){
-        AppDialog(
+        AppImageDialog(
             imageRes = R.drawable.happy_bunny,
             title = "Вітаємо",
             message = "Ви виконали поставлену ціль, та й термін вже минув. Давайте створимо новий план?",
@@ -1063,90 +945,102 @@ fun ObserveDialogs(goalTransactionsAmount: Double?, isContinued:Boolean,
 }
 
 
-//fun previewUiStateExample(): MainScreenViewModel.UiState {
-//    val transactions = listOf(
-//        Transaction(
-//            id = "1",
-//            date = 1766851200,
-//            amount = 100.0,
-//            type = TransactionType.Expense,
-//            categoryId = "food",
-//            walletId = "1"
-//        )
-//    )
-//    val wallets = listOf(
-//        Wallet(
-//            id = "1",
-//            name = "Cash",
-//            type = WalletType.Cash,
-//            balance = 1000.0
-//        )
-//    )
-//    return MainScreenViewModel.UiState(
-//        wallets = wallets,
-//        transactions = transactions
-//    )
-//}
-//
-//
-//@Preview(showSystemUi = true, showBackground = true)
-//@Composable
-//private fun MainScreenCompact() {
-//    val state = previewUiStateExample()
-//    MoneyPathTheme {
-//        Scaffold(Modifier.fillMaxSize(),
-//            bottomBar = { StatelessBottomBar("mainscreen") { } }
-//        ) {innerPadding->
-//            Spacer(Modifier.padding(innerPadding))
-//            MainScreenStateless(
-//                state = state,
-//                snackBarHostState = remember { SnackbarHostState() }
-//            ) { }
-//        }
-//    }
-//}
-//
-//@Preview(showSystemUi = true, showBackground = true,
-//    device = "spec:width=1280dp,height=800dp,dpi=240,orientation=portrait"
-//)
-//@Composable
-//private fun MainScreenMedium() {
-//    val state = previewUiStateExample()
-//    MoneyPathTheme {
-//        Scaffold(Modifier.fillMaxSize()
-//        ) {innerPadding->
-//            Row(Modifier.fillMaxSize()) {
-//                Spacer(Modifier.padding(innerPadding))
-//                StatelessNavigationRail("mainscreen") { }
-//                MainScreenStateless(
-//                    state = state,
-//                    snackBarHostState = remember { SnackbarHostState() }
-//                ) { }
-//            }
-//        }
-//    }
-//}
-//
-//@SuppressLint("SuspiciousIndentation")
-//@Preview(showSystemUi = true, showBackground = true,
-//    device = "spec:width=1280dp,height=800dp,dpi=240"
-//)
-//@Composable
-//private fun MainScreenExpanded() {
-//    val state = previewUiStateExample()
-//        MoneyPathTheme {
-//            Scaffold(
-//                Modifier.fillMaxSize()
-//            ) { innerPadding ->
-//                Row(Modifier.fillMaxSize()) {
-//                    Spacer(Modifier.padding(innerPadding))
-//                    StatelessNavigationDrawer(modifier = Modifier.weight(0.25f), "mainscreen") { }
-//                    MainScreenStateless(
-//                        modifier = Modifier.weight(0.75f),
-//                        state = state,
-//                        snackBarHostState = remember { SnackbarHostState() }
-//                    ) { }
-//                }
-//            }
-//        }
-//}
+@Preview(showBackground = true, group = "GoalBox")
+@Composable
+private fun GoalBoxPreview(@PreviewParameter(GoalAmountProvider::class) params: GoalPreviewParams) {
+    MoneyPathTheme {
+        GoalBox(
+            dimensions = Dimensions(),
+            goalName = "Відпочинок",
+            goalTransactionsAmount = params.goalTransactionsAmount,
+            goalAmount = params.goalAmount,
+        )
+    }
+}
+
+@Preview(showBackground = true, group = "WalletLazyRow", widthDp = 360)
+@Composable
+private fun WalletLazyRowPreview(@PreviewParameter(WalletsProvider::class) wallets: List<Wallet>) {
+    MoneyPathTheme {
+        WalletsLazyRowWithIndicator(
+            dimensions = Dimensions(),
+            wallets = wallets,
+            onWalletClick = {},
+            onWalletAddClick = {},
+            isLoading = false,
+        ) { }
+    }
+}
+
+@Preview(showBackground = true, group = "TransactionRow", widthDp = 360)
+@Composable
+private fun TransactionRowPreview(
+    @PreviewParameter(WalletsAndTransactionProvider::class)
+    data: Pair<List<Wallet>, Transaction>
+) {
+    val (wallets, transaction) = data
+    MoneyPathTheme {
+        TransactionRow(
+            dimensions = Dimensions(),
+            transaction = transaction,
+            wallets = wallets
+        ) { }
+    }
+}
+
+@Preview(showBackground = true, group = "TransactionBox")
+@Composable
+private fun TransactionBoxPreview(
+    @PreviewParameter(WalletsAndTransactionsProvider::class)
+    data: Triple<List<Wallet>, List<Transaction>, Boolean>
+) {
+    val (wallets, transactions, isTransactionLoading) = data
+    MoneyPathTheme { 
+        TransactionBox(
+            dimensions = Dimensions(),
+            date = 1767625003,
+            transactions = transactions,
+            isTransactionLoading = isTransactionLoading,
+            onTransactionClick = {},
+            onDateChange = {},
+            wallets = wallets
+        )
+    }
+}
+
+
+
+@Preview(showBackground = true, group = "SimpleElements")
+@Composable
+fun WalletCardPreview() {
+    MoneyPathTheme {
+        Box(modifier = Modifier
+            .size(160.dp)
+            .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            WalletCard(
+                Dimensions(),
+                Wallet(
+                    name = "Готівка",
+                    balance = 1000.0
+                )
+            ) { }
+        }
+    }
+}
+
+@Preview(showBackground = true, group = "SimpleElements")
+@Composable
+fun AddWalletCardPreview() {
+    MoneyPathTheme {
+        Box(modifier = Modifier
+            .size(160.dp)
+            .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            AddWalletCard(Dimensions()) {}
+        }
+    }
+}
+

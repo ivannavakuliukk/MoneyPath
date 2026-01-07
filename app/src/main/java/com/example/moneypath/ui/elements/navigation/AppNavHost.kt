@@ -1,8 +1,6 @@
-package com.example.moneypath.ui.elements
+package com.example.moneypath.ui.elements.navigation
 
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -10,6 +8,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.moneypath.ui.elements.navigation.BottomNavItem
 import com.example.moneypath.ui.screens.AddTransactionScreen
 import com.example.moneypath.ui.screens.AddWalletScreen
 import com.example.moneypath.ui.screens.CategoriesScreen

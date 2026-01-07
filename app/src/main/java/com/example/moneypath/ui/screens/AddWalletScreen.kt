@@ -49,7 +49,7 @@ import com.example.moneypath.R
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.ui.elements.AppButton
 import com.example.moneypath.ui.elements.AppInputRow
-import com.example.moneypath.ui.elements.BalanceDialog
+import com.example.moneypath.ui.elements.dialogs.BalanceDialog
 import com.example.moneypath.ui.elements.ContainerForDataBox
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBar

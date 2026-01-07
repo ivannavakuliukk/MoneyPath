@@ -2,8 +2,6 @@ package com.example.moneypath.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,15 +20,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -48,9 +42,6 @@ import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -64,7 +55,7 @@ import com.example.moneypath.domain.models.TransactionType
 import com.example.moneypath.data.models.Wallet
 import com.example.moneypath.data.models.WalletType
 import com.example.moneypath.ui.elements.AppButton
-import com.example.moneypath.ui.elements.AppDatePickerDialog
+import com.example.moneypath.ui.elements.dialogs.AppDatePickerDialog
 import com.example.moneypath.ui.elements.AppInputRow
 import com.example.moneypath.ui.elements.ContainerForDataBox
 import com.example.moneypath.ui.elements.InfiniteLinearWavyIndicator
@@ -72,12 +63,12 @@ import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBar
 import com.example.moneypath.ui.elements.TextFieldForDate
 import com.example.moneypath.ui.elements.WalletDropDownMenu
+import com.example.moneypath.ui.elements.TransactionSegmentedButton
 import com.example.moneypath.ui.viewmodel.AddTransactionViewModel
 import com.example.moneypath.utils.AppTextFieldColors
 import com.example.moneypath.utils.ScreenSize
 import com.example.moneypath.utils.backgroundColor
 import com.example.moneypath.utils.displaySign
-import com.example.moneypath.utils.toDisplayName
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 
 /*
@@ -242,7 +233,7 @@ fun TransactionInputSection(
     ) {
         TransactionSegmentedButton(
             selectedType = state.type,
-        ) { onTypeChange(it)}
+        ) { onTypeChange(it) }
         // Поле вводу з автоматичним знаком
         Row(
             modifier = Modifier
@@ -293,56 +284,6 @@ fun TransactionInputSection(
                     .fillMaxWidth()
                     .fillMaxHeight()
 
-            )
-        }
-    }
-}
-
-@Composable
-fun TransactionSegmentedButton(modifier: Modifier = Modifier, selectedType: TransactionType, onClick: (TransactionType)-> Unit) {
-    SingleChoiceSegmentedButtonRow {
-        TransactionType.entries.forEachIndexed { index, type->
-            SegmentedButton(
-                selected = selectedType == type,
-                onClick = { onClick(type) },
-                shape = SegmentedButtonDefaults.itemShape(
-                    index = index,
-                    count = TransactionType.entries.size
-                ),
-                label = {Text(type.toDisplayName(), style = MaterialTheme.typography.bodyLarge,
-                    modifier = modifier.padding(end = 15.dp),)},
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = MaterialTheme.colorScheme.primary,
-                    inactiveContainerColor =  when(selectedType){
-                        TransactionType.Income -> MaterialTheme.colorScheme.secondary
-                        TransactionType.Transfer -> MaterialTheme.colorScheme.inverseOnSurface
-                        TransactionType.Expense -> MaterialTheme.colorScheme.onSurface
-                    },
-                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                    inactiveContentColor = MaterialTheme.colorScheme.primary,
-                    activeBorderColor = MaterialTheme.colorScheme.primary,
-                    inactiveBorderColor = MaterialTheme.colorScheme.primary
-                ),
-                icon = {
-                    val visible = type == selectedType
-                    val scale by animateFloatAsState(targetValue = if (visible) 1f else 0f,
-                        animationSpec = tween(durationMillis = 500))
-                    val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f,
-                        animationSpec = tween(durationMillis = 500))
-
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.check),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                alpha = alpha
-                            )
-                    )
-
-                }
             )
         }
     }

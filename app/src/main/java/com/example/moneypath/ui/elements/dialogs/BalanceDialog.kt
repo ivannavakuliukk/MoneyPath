@@ -1,10 +1,9 @@
-package com.example.moneypath.ui.elements
+package com.example.moneypath.ui.elements.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,14 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroupScope
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -35,13 +27,17 @@ import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.moneypath.ui.elements.AppButton
+import com.example.moneypath.ui.elements.AppButtonGroup
+import com.example.moneypath.ui.elements.MyTopAppBar
+import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.utils.ScreenSize
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
 
@@ -72,58 +68,18 @@ fun BalanceDialog(
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .background(MaterialTheme.colorScheme.background)
-                        .padding(start = ScreenSize.width * 0.055f, end = ScreenSize.width * 0.055f),
+                        .padding(start = (ScreenSize.width * 0.055f).coerceAtLeast(10.dp), end = (ScreenSize.width * 0.055f).coerceAtLeast(10.dp)),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    AppButtonGroup(modifier = Modifier.fillMaxWidth(), isPositive = isPositive) {isPositive = it}
-//                    //  Перемикач позитивне / негативне
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth(),
-//                        horizontalArrangement = Arrangement.Center
-//                    ) {
-//                        Button(
-//                            onClick = { isPositive = true },
-//                            colors = ButtonDefaults.buttonColors(
-//                                containerColor = if (isPositive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-//                                contentColor = if (isPositive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-//                            ),
-//                            modifier = Modifier
-//                                .height(ScreenSize.height * 0.05f)
-//                                .weight(0.5f),
-//                            shape = RoundedCornerShape(topStart = 15.dp, bottomStart = 15.dp),
-//                            contentPadding = PaddingValues(2.dp)
-//                        ) {
-//                            Text(
-//                                text = "Позитивне",
-//                                textAlign = TextAlign.Center,
-//                                style = MaterialTheme.typography.bodyLarge
-//                            )
-//                        }
-//                        Button(
-//                            onClick = { isPositive = false },
-//                            colors = ButtonDefaults.buttonColors(
-//                                containerColor = if (!isPositive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-//                                contentColor = if (!isPositive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-//                            ),
-//                            modifier = Modifier
-//                                .height(ScreenSize.height * 0.05f)
-//                                .weight(0.5f),
-//                            shape = RoundedCornerShape(topEnd = 15.dp, bottomEnd = 15.dp),
-//                            contentPadding = PaddingValues(2.dp)
-//                        ) {
-//                            Text(
-//                                text = "Негативне",
-//                                textAlign = TextAlign.Center,
-//                                style = MaterialTheme.typography.bodyLarge
-//                            )
-//                        }
-//                    }
+                    AppButtonGroup(
+                        modifier = Modifier.fillMaxWidth(),
+                        isPositive = isPositive
+                    ) { isPositive = it }
                     // Поле вводу з автоматичним знаком
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(ScreenSize.height * 0.25f),
+                            .height((ScreenSize.height * 0.25f).coerceAtLeast(180.dp)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -190,8 +146,8 @@ fun BalanceDialog(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(
-                                start = ScreenSize.width * 0.055f,
-                                end = ScreenSize.width * 0.055f,
+                                start = (ScreenSize.width * 0.055f).coerceAtLeast(10.dp),
+                                end = (ScreenSize.width * 0.055f).coerceAtLeast(10.dp),
                                 bottom = 25.dp
                             ),
                         MaterialTheme.colorScheme.tertiary
@@ -203,25 +159,14 @@ fun BalanceDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(showBackground = true, widthDp = 360, device = "spec:width=1080px,height=2000px,dpi=440")
 @Composable
-fun AppButtonGroup(modifier: Modifier = Modifier,  isPositive: Boolean, onSelectionChange: (Boolean)-> Unit) {
-    ButtonGroup(
-        modifier = modifier.height(35.dp),
-        overflowIndicator = {}
-    ){
-        this.toggleableItem(
-            checked = isPositive,
-            onCheckedChange = {onSelectionChange(true)},
-            label = "Позитивне",
-            weight = 1f
-        )
-        this.toggleableItem(
-            checked = !isPositive,
-            onCheckedChange = {onSelectionChange(false)},
-            label = "Негативне",
-            weight = 1f,
+private fun BalanceDialogPreview() {
+    MoneyPathTheme {
+        BalanceDialog(
+            onDismiss = {},
+            onSave = {},
+            balance = 1000.0
         )
     }
-
 }

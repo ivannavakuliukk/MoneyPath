@@ -1,4 +1,4 @@
-package com.example.moneypath.ui.elements
+package com.example.moneypath.ui.elements.navigation
 
 import com.example.moneypath.R
 

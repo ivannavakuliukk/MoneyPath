@@ -40,7 +40,7 @@ import androidx.navigation.NavController
 import com.example.moneypath.R
 import com.example.moneypath.domain.models.TransactionType
 import com.example.moneypath.data.models.findCategoryById
-import com.example.moneypath.ui.elements.AppAlertDialog
+import com.example.moneypath.ui.elements.dialogs.AppAlertDialog
 import com.example.moneypath.ui.elements.AppButton
 import com.example.moneypath.ui.elements.AppInputRow
 import com.example.moneypath.ui.elements.Line

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -12,11 +13,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import com.example.moneypath.domain.models.TransactionType
+import com.gigamole.composeshadowsplus.common.ShadowsPlusType
+import com.gigamole.composeshadowsplus.common.shadowsPlus
 
 
 object ScreenSize {
@@ -157,4 +162,14 @@ data class Dimensions(
     val progressBarHeight: Dp = 6.dp,
     val lineWidth: Dp = 1.dp,
     val buttonSize: Dp = 45.dp
+)
+
+fun Modifier.cardShadow() = this.shadowsPlus(
+    type = ShadowsPlusType.SoftLayer,
+    color = Color.Black.copy(alpha = 0.25f),
+    radius = 4.dp,
+    offset = DpOffset(x = 2.dp, y = 2.dp),
+    spread = 1.dp,
+    shape = RoundedCornerShape(15.dp),
+    isAlphaContentClip = true
 )

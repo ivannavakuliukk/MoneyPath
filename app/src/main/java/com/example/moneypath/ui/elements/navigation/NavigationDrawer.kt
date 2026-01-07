@@ -1,4 +1,4 @@
-package com.example.moneypath.ui.elements
+package com.example.moneypath.ui.elements.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

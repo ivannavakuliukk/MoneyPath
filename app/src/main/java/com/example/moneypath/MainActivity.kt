@@ -28,10 +28,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
 import com.example.moneypath.data.repository.CryptoRepository
 import com.example.moneypath.domain.repository.MonobankRepository
-import com.example.moneypath.ui.elements.AppNavHost
-import com.example.moneypath.ui.elements.AppNavigationDrawer
-import com.example.moneypath.ui.elements.AppNavigationRail
-import com.example.moneypath.ui.elements.BottomNavigationBar
+import com.example.moneypath.ui.elements.navigation.AppNavHost
+import com.example.moneypath.ui.elements.navigation.AppNavigationDrawer
+import com.example.moneypath.ui.elements.navigation.AppNavigationRail
+import com.example.moneypath.ui.elements.navigation.BottomNavigationBar
 import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.domain.usecase.business.MonobankSyncManager
 import com.example.moneypath.utils.ScreenSize

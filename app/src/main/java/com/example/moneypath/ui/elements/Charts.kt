@@ -271,7 +271,6 @@ fun CategoryHorizontalBarChart(
                 chart.setNoDataText("")
                 chart.marker = CategoryMarkerView(chart.context, labels)
                 chart.invalidate()
-//                chart.animateY(400)
             }
         }
     )

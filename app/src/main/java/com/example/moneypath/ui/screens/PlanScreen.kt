@@ -1,10 +1,6 @@
 package com.example.moneypath.ui.screens
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.widget.TextView
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,12 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,32 +22,23 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SplitButtonDefaults
-import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -66,33 +51,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneypath.R
+import com.example.moneypath.data.models.BudgetPlanDB
 import com.example.moneypath.data.models.Categories
 import com.example.moneypath.data.models.findCategoryById
-import com.example.moneypath.ui.elements.AppAlertDialog
-import com.example.moneypath.ui.elements.BottomNavigationBar
+import com.example.moneypath.ui.elements.dialogs.AppAlertDialog
 import com.example.moneypath.ui.elements.CategoryHorizontalBarChart
 import com.example.moneypath.ui.elements.Line
 import com.example.moneypath.ui.elements.MyTopAppBarTwoLinesNoIcon
 import com.example.moneypath.ui.elements.PagerIndicator
 import com.example.moneypath.ui.elements.PlanContainer
-import com.example.moneypath.ui.elements.SettingDialog
+import com.example.moneypath.ui.elements.dialogs.SettingDialog
+import com.example.moneypath.ui.elements.AppSplitButton
+import com.example.moneypath.ui.preview.PlanParamsProvider
+import com.example.moneypath.ui.theme.MoneyPathTheme
 import com.example.moneypath.ui.viewmodel.PlanScreenViewModel
 import com.example.moneypath.utils.ScreenSize
+import com.example.moneypath.utils.TimeDiff
 import com.example.moneypath.utils.monthWordForm
 import com.example.moneypath.utils.rotateVertically
 import com.gigamole.composeshadowsplus.softlayer.SoftLayerShadowContainer
-import kotlinx.coroutines.coroutineScope
 import kotlin.math.roundToInt
 
 @Composable
@@ -162,20 +147,24 @@ fun PlanScreen(navController: NavController, viewModel: PlanScreenViewModel = hi
             },
             floatingActionButton = {
                 AppSplitButton(
-                isPlanned = state.isPlanned,
-                onSettingClick = {
-                    viewModel.getSetUp()
-                    showDialog = true },
-                onDeleteClick = {showDeleteDialog = true},
-                onAdditionalClick = {
-                    moveToSecondPage = true
-                },
-                    onClick ={ if (state.isWallets) {
-                        navController.navigate("form")
-                    } else {
-                        viewModel.onErrorChange("Щоб розрахувати план, додайте хоча б один гаманець")
-                    }}
-            )},
+                    isPlanned = state.isPlanned,
+                    onSettingClick = {
+                        viewModel.getSetUp()
+                        showDialog = true
+                    },
+                    onDeleteClick = { showDeleteDialog = true },
+                    onAdditionalClick = {
+                        moveToSecondPage = true
+                    },
+                    onClick = {
+                        if (state.isWallets) {
+                            navController.navigate("form")
+                        } else {
+                            viewModel.onErrorChange("Щоб розрахувати план, додайте хоча б один гаманець")
+                        }
+                    }
+                )
+            },
             floatingActionButtonPosition = FabPosition.Center,
             snackbarHost = {
                 SnackbarHost(hostState = snackBarHostState, snackbar = { data ->
@@ -197,11 +186,10 @@ fun PlanScreen(navController: NavController, viewModel: PlanScreenViewModel = hi
                         .padding(innerPadding)
                 ) { page ->
                     when (page) {
-                        0 -> CurrentPlan(state, navController,
-                            {viewModel.getSetUp()},
-                            {viewModel.onErrorChange(it)},
-                            {viewModel.deletePlan()})
-                        1 -> if(state.isPlanned && state.isGoal) PlansGrid(state){viewModel.selectAdditionalPlan(it)} else OtherPlans(state)
+                        0 -> CurrentPlan(state){viewModel.deletePlan()}
+                        1 -> if(state.isPlanned && state.isGoal) 
+                                PlansGrid(state.plan, state.additionalPlans){viewModel.selectAdditionalPlan(it)} 
+                        else OtherPlans()
                     }
                 }
             }
@@ -209,97 +197,10 @@ fun PlanScreen(navController: NavController, viewModel: PlanScreenViewModel = hi
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun AppSplitButton(modifier: Modifier = Modifier, isPlanned: Boolean,
-                   onSettingClick:()-> Unit, onDeleteClick:()-> Unit,
-                   onAdditionalClick: ()-> Unit , onClick: ()-> Unit) {
-    var checked by remember {mutableStateOf(false)}
-    SplitButtonLayout(
-        modifier = modifier,
-        leadingButton = {
-            SplitButtonDefaults.LeadingButton(
-                onClick = {onClick()},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.icon_edit),
-                    contentDescription = null,
-                    modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize)
-                )
-                Spacer(modifier = Modifier.size(6.dp))
-                Text(text = if(isPlanned) "Оновити план" else "Створити план", style = MaterialTheme.typography.bodyMedium,
-                    )
-            } },
-        trailingButton = {
-            SplitButtonDefaults.TrailingButton(
-                checked = checked,
-                onCheckedChange = {checked = it},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                val rotate by animateFloatAsState(
-                    targetValue = if(checked) 180f else 0f
-                )
-                Icon(
-                    imageVector = ImageVector.vectorResource(
-                        id =  R.drawable.outline_keyboard_arrow_up_24
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier.size(SplitButtonDefaults.TrailingIconSize).graphicsLayer{
-                        rotationZ = rotate
-                    }
-                )
-            }
-//            AnimatedVisibility(checked) {
-                DropdownMenu(
-                    expanded = checked,
-                    onDismissRequest = { checked = false },
-                    offset = DpOffset(y = (-10).dp, x = 0.dp),
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    val items = listOf(
-                        "Переглянути налаштування" to onSettingClick,
-                        "Переглянути додаткові плани" to onAdditionalClick,
-                        "Видалити план" to onDeleteClick
-                    )
-                    items.forEach { item ->
-                        Column {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        item.first,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = Color(0xFF1444F1),
-                                ),
-                                onClick = {
-                                    item.second()
-                                    checked = false
-                                }
-                            )
-                            Line()
-                        }
-                    }
-
-                }
-//            }
-        }
-
-    )
-}
-
 @SuppressLint("DefaultLocale")
 @Composable
-fun CurrentPlan(state: PlanScreenViewModel.UiState, navController: NavController,
-                onSettingsClick: ()-> Unit, onError: (String)-> Unit, onDelete: ()-> Unit)
+fun CurrentPlan(state: PlanScreenViewModel.UiState,
+                 onDelete: ()-> Unit)
 {
     var showDialog by remember{ mutableStateOf(false)}
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -349,47 +250,10 @@ fun CurrentPlan(state: PlanScreenViewModel.UiState, navController: NavController
                 )
                 Line(MaterialTheme.colorScheme.surfaceDim)
                 if(state.isPlanned) {
-                    Box(Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 15.dp, horizontal = 25.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.surfaceDim, RectangleShape)
-                        .padding(5.dp)
-                    ) {
-                        Text(
-                            text= "⏳ Залишилось ${state.period?.months} місяців та ${state.period?.days} днів",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.surfaceDim,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                    var visible by remember { mutableStateOf(true) }
-                    Box(Modifier.heightIn(min = (state.fullCategoriesMap.size * 25).dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Колір категорії",
-                                modifier = Modifier.rotateVertically(false),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (visible) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                                else Color.Transparent
-                            )
-                            CategoryHorizontalBarChart(state.fullCategoriesMap)
-                        }
-                    }
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp, bottom = 25.dp),
-                        text = "гривень",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (visible) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                        else Color.Transparent,
-                        textAlign = TextAlign.Center
-                    )
+                    TimeBox(state.period)
+
+                    PlanBarChart(state.fullCategoriesMap)
+
                     val categories = state.fullCategoriesMap
                     val iconsList = categories.keys.map { name ->
                         Categories.expensesCategory.find { it.name == name }?.iconRes
@@ -449,7 +313,7 @@ fun CategoryLine(iconRes: Int, name:String, amount: Double, percent: String){
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenSize.height * 0.08f),
+            .height((ScreenSize.height * 0.08f).coerceAtLeast(50.dp)),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
@@ -488,7 +352,7 @@ fun CategoryLine(iconRes: Int, name:String, amount: Double, percent: String){
 }
 
 @Composable
-fun OtherPlans(state: PlanScreenViewModel.UiState){
+fun OtherPlans(){
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -499,7 +363,10 @@ fun OtherPlans(state: PlanScreenViewModel.UiState){
             PlanContainer {
                 Box(modifier = Modifier
                     .height(180.dp)
-                    .fillMaxWidth()){
+                    .padding(10.dp)
+                    .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ){
                     Text(
                         text = "Тут наводяться альтернативні плани витрат для планування з ціллю.",
                         style = MaterialTheme.typography.bodyMedium.copy(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.6f)),
@@ -513,19 +380,18 @@ fun OtherPlans(state: PlanScreenViewModel.UiState){
 }
 
 @Composable
-fun PlansGrid(state: PlanScreenViewModel.UiState, onPlanClick: (Int)-> Unit){
+fun PlansGrid(currentPlan: BudgetPlanDB?, additionalPlans:List<BudgetPlanDB>, onPlanClick: (Int)-> Unit){
     var showPlanDialog by remember{ mutableStateOf(false) }
     var planIndex by remember { mutableStateOf(0) }
     var name by remember { mutableStateOf("") }
     if(showPlanDialog){
         AdditionalPlanDialog(
             onConfirmClick = {
-                onPlanClick(it)
+                onPlanClick(planIndex)
                 showPlanDialog = false},
             onCancelClick = {showPlanDialog = false},
             name = name,
-            index = planIndex,
-            state = state
+            plan = additionalPlans[planIndex]
         )
     }
     LazyVerticalGrid(
@@ -533,134 +399,38 @@ fun PlansGrid(state: PlanScreenViewModel.UiState, onPlanClick: (Int)-> Unit){
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = ScreenSize.width * 0.055f)
-            .padding( top = 15.dp),
+            .padding(horizontal = (ScreenSize.width * 0.055f).coerceAtLeast(15.dp))
+            .padding(top = 15.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(13.dp)
     ) {
         // Визначаємо додаткові плани, додаємо поточний наперед
-        val plans = state.additionalPlans
-        val updatedPlans = listOf(state.plan) + plans
+        val plans = additionalPlans
+        val updatedPlans = listOf(currentPlan) + plans
         // Даємо назву планам
         val names: List<String> = updatedPlans.map { plan ->
-            if (plan == null || state.plan == null) {
+            if (plan == null || currentPlan == null) {
                 ""
-            } else if (plan.months == state.plan.months) {
+            } else if (plan.months == currentPlan.months) {
                 "Поточний план"
-            } else if (plan.months!! < state.plan.months!!) {
+            } else if (plan.months!! < currentPlan.months!!) {
                 "Мінімальний план"
-            } else if (plan.months == state.plan.months * 2) {
+            } else if (plan.months == currentPlan.months * 2) {
                 "Вдвічі довше"
             } else {
-                val percent = ((((plan.months.toDouble() / state.plan.months.toDouble()) - 1) * 100) / 10).roundToInt() * 10
+                val percent = ((((plan.months.toDouble() / currentPlan.months.toDouble()) - 1) * 100) / 10).roundToInt() * 10
                 "На $percent% довше"
             }
         }
         itemsIndexed(updatedPlans){index, plan ->
             if(plan != null) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(215.dp)
-                        .clickable {
-                            if (index != 0) {
-                                planIndex = index - 1
-                                name = names[index]
-                                showPlanDialog = true
-                            }
-                        },
-                    elevation = CardDefaults.cardElevation(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    border = if (index == 0) BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null,
-                    shape = RoundedCornerShape(13.dp)
+                AdditionalPlanCard(
+                    index, names[index], plan
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(vertical = 12.dp)
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        Text(
-                            text = names[index],
-                            style = MaterialTheme.typography.titleSmall,
-                            color = if(names[index] == "Мінімальний план"){
-                                MaterialTheme.colorScheme.onSurface
-                            }else{
-                                MaterialTheme.colorScheme.onPrimary
-                            },
-                            modifier = Modifier
-                                .padding(bottom = 1.dp)
-                                .padding(horizontal = 12.dp)
-                        )
-                        Line(modifier = Modifier.padding(horizontal = 12.dp))
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(vertical = 7.dp)
-                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.1f))
-                                .padding(vertical = 4.dp, horizontal = 11.dp)
-                        ){
-                            Row() {
-                                Image(
-                                    painter = painterResource(R.drawable.clock),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(17.dp)
-                                        .padding(end = 4.dp)
-                                )
-                                Text(
-                                    text = "Термін ${plan.months} ${
-                                        plan.months?.let {
-                                            monthWordForm(it)
-                                        }
-                                    }",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(bottom = 3.dp)
-                                )
-                            }
-                            Text(
-                                text = "Щоміс. відкладення:",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                            Text(
-                                text = "${plan.stable_savings?.toInt()} грн. – ${plan.goal_percent}%",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                            )
-                        }
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 5.dp)
-                                .background(MaterialTheme.colorScheme.primary),
-                            verticalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            val top2 = plan.stable_months_allocation
-                                .toList()
-                                .sortedByDescending { it.second }
-                                .take(2)
-                                .toMap()
-
-                            top2.forEach { entry ->
-                                Text(
-                                    text = "${findCategoryById( entry.key).name} - ${entry.value.toInt()} грн",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f)
-                                )
-                            }
-                            Text(
-                                text = "...",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                    if (index != 0) {
+                        planIndex = index - 1
+                        name = names[index]
+                        showPlanDialog = true
                     }
                 }
             }
@@ -670,17 +440,16 @@ fun PlansGrid(state: PlanScreenViewModel.UiState, onPlanClick: (Int)-> Unit){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdditionalPlanDialog(onConfirmClick: (Int) -> Unit, onCancelClick: ()-> Unit, state: PlanScreenViewModel.UiState, index:Int, name: String) {
+fun AdditionalPlanDialog(onConfirmClick: () -> Unit, onCancelClick: ()-> Unit, plan: BudgetPlanDB, name: String) {
     var showConfirmDialog by remember { mutableStateOf(false) }
     if(showConfirmDialog){
         AppAlertDialog(
             text = "Ви впевнені що хочете обрати цей план замість поточного? Весь прогрес видалиться, це незворотня дія!",
             onConfirmClick = {
                 showConfirmDialog = false
-                onConfirmClick(index)
+                onConfirmClick()
             }) {showConfirmDialog = false }
     }
-    val plan = state.additionalPlans[index]
     AlertDialog(
         onDismissRequest = onCancelClick,
     ) {
@@ -696,7 +465,7 @@ fun AdditionalPlanDialog(onConfirmClick: (Int) -> Unit, onCancelClick: ()-> Unit
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .padding(horizontal = ScreenSize.width * 0.055f)
+                    .padding(horizontal = (ScreenSize.width * 0.055f).coerceAtLeast(15.dp))
                     .padding(bottom = 15.dp, top = 15.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -822,6 +591,241 @@ fun LoadingDataScreen() {
                 .size(55.dp)
         )
     }
-
 }
+
+@Composable
+fun AdditionalPlanCard(index: Int, name: String, plan: BudgetPlanDB, onClick: ()-> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(215.dp)
+            .clickable {
+                onClick()
+            },
+        elevation = CardDefaults.cardElevation(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        ),
+        border = if (index == 0) BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null,
+        shape = RoundedCornerShape(13.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                color = if(name == "Мінімальний план"){
+                    MaterialTheme.colorScheme.onSurface
+                }else{
+                    MaterialTheme.colorScheme.onPrimary
+                },
+                modifier = Modifier
+                    .padding(bottom = 1.dp)
+                    .padding(horizontal = 12.dp)
+            )
+            Line(modifier = Modifier.padding(horizontal = 12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(vertical = 7.dp)
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.1f))
+                    .padding(vertical = 4.dp, horizontal = 11.dp)
+            ){
+                Row() {
+                    Image(
+                        painter = painterResource(R.drawable.clock),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(17.dp)
+                            .padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "Термін ${plan.months} ${
+                            plan.months?.let {
+                                monthWordForm(it)
+                            }
+                        }",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 3.dp)
+                    )
+                }
+                Text(
+                    text = "Щоміс. відкладення:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = "${plan.stable_savings?.toInt()} грн. – ${plan.goal_percent}%",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 5.dp)
+                    .background(MaterialTheme.colorScheme.primary),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                val top2 = plan.stable_months_allocation
+                    .toList()
+                    .sortedByDescending { it.second }
+                    .take(2)
+                    .toMap()
+
+                top2.forEach { entry ->
+                    Text(
+                        text = "${findCategoryById( entry.key).name} - ${entry.value.toInt()} грн",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f)
+                    )
+                }
+                Text(
+                    text = "...",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TimeBox(period: TimeDiff?) {
+    Box(Modifier
+        .fillMaxWidth()
+        .padding(vertical = 15.dp, horizontal = 25.dp)
+        .border(1.dp, MaterialTheme.colorScheme.surfaceDim, RectangleShape)
+        .padding(5.dp)
+    ) {
+        Text(
+            text= "⏳ Залишилось ${period?.months} місяців та ${period?.days} днів",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.surfaceDim,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+fun PlanBarChart(fullCategoriesMap: Map<String, Double>) {
+    var visible by remember { mutableStateOf(true) }
+    Box(Modifier.heightIn(min = (fullCategoriesMap.size * 25).dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Колір категорії",
+                modifier = Modifier.rotateVertically(false),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (visible) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                else Color.Transparent
+            )
+            CategoryHorizontalBarChart(fullCategoriesMap)
+        }
+    }
+    Text(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 25.dp),
+        text = "гривень",
+        style = MaterialTheme.typography.bodySmall,
+        color = if (visible) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+        else Color.Transparent,
+        textAlign = TextAlign.Center
+    )
+}
+
+@Preview(showBackground = true, widthDp = 360, group = "Additional")
+@Composable
+private fun AdditionalPlanDialogPreview(
+    @PreviewParameter(PlanParamsProvider::class)
+    plan: BudgetPlanDB
+) {
+    MoneyPathTheme {
+        AdditionalPlanDialog(
+            onConfirmClick ={},
+            onCancelClick = {},
+            plan = plan,
+            name = "Мінімальний план"
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF55D6BE, group = "Additional")
+@Composable
+private fun AdditionalPlanCardPreview( @PreviewParameter(PlanParamsProvider::class)
+                                       plan: BudgetPlanDB) {
+    MoneyPathTheme {
+        Box(Modifier
+            .width(180.dp)
+            .padding(10.dp)) {
+            AdditionalPlanCard(
+                1,
+                "Мінімальний план",
+                plan
+            ) { }
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF55D6BE, widthDp = 360,
+    device = "spec:width=1080px,height=1500px,dpi=440", group = "Additional"
+)
+@Composable
+private fun PlansGridPreview( @PreviewParameter(PlanParamsProvider::class)
+                                       plan: BudgetPlanDB) {
+    val additionalPlans = List(3){plan}
+    MoneyPathTheme {
+            PlansGrid(
+                plan,
+                additionalPlans
+            ) { }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, group = "Additional",
+    device = "spec:width=1080px,height=1500px,dpi=440"
+)
+@Composable
+private fun OtherPlansEmptyPreview() {
+    MoneyPathTheme {
+        OtherPlans()
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, group = "Current")
+@Composable
+private fun CategoryLinePreview() {
+    MoneyPathTheme {
+        CategoryLine(
+            R.drawable.category_taxi,
+            "Таксі",
+            amount = 2000.0,
+            percent = "34.5"
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, group = "Current")
+@Composable
+private fun TimeBoxPreview() {
+    MoneyPathTheme {
+        TimeBox(TimeDiff(2, 1))
+    }
+}
+
+
+
 
